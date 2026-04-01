@@ -1,0 +1,29 @@
+# 仮想環境
+venv/
+.venv/
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+*.pyo
+
+# モデルキャッシュ（手動配置した場合）
+models/
+
+# 環境変数
+.env
+
+# パッケージビルド
+*.egg-info/
+dist/
+build/
+
+# qwen3-tts を直下にcloneした場合
+qwen3-tts/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

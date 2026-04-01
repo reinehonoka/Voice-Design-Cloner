@@ -1,0 +1,33 @@
+VoiceDesignCloner
+Copyright (c) 2026 零音ほのか (Reine Honoka)
+
+This product includes software developed by:
+
+- Qwen3-TTS by Qwen Team, Alibaba Cloud (Apache License 2.0)
+  https://github.com/QwenLM/Qwen3-TTS
+
+- M2M-100 by Meta AI (MIT License)
+  https://github.com/facebookresearch/fairseq
+
+- Gradio by Gradio, Inc. (Apache License 2.0)
+  https://github.com/gradio-app/gradio
+
+- Gradio Theme: miku by NoCrypt (Apache License 2.0)
+  https://huggingface.co/spaces/NoCrypt/miku
+
+- faster-qwen3-tts by Andrés Marafioti (Apache License 2.0)
+  https://github.com/andimarafioti/faster-qwen3-tts
+
+This product includes the following text corpora:
+
+- ITA Corpus (Unlicense / Public Domain)
+  https://github.com/mmorise/ita-corpus
+
+- ROHAN Corpus (Public Domain)
+  https://github.com/mmorise/rohan4600
+
+- MANA Corpus (Public Domain)
+  https://github.com/mmorise/mana-corpus
+
+「初音ミク」はクリプトン・フューチャー・メディア株式会社の著作物です。
+© Crypton Future Media, INC. www.piapro.net

@@ -1,0 +1,13 @@
+# Qwen3-TTS GUI Tool - Requirements
+# Note: torch / torchaudio are installed by setup.bat (CUDA or CPU auto-detected)
+
+qwen-tts
+sentencepiece
+
+# qwen-tts 0.1.1 already depends on:
+# transformers, accelerate, gradio, librosa, torchaudio, soundfile, sox, onnxruntime, einops
+# (verified via local package metadata on 2026-03-28)
+
+# Optional: CUDA Graph accelerated inference (6-10x faster, GPU only)
+# Uncomment or install separately: pip install faster-qwen3-tts
+# faster-qwen3-tts
