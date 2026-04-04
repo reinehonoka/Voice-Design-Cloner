@@ -34,6 +34,16 @@ else
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 fi
 
+# Upgrade packaging tools first. Some deps still use legacy setup.py flows.
+echo ""
+echo "[INFO] Upgrading pip/setuptools/wheel..."
+pip install -U pip setuptools wheel
+
+# sox may import numpy during metadata generation, so install it before requirements.
+echo ""
+echo "[INFO] Installing numpy first..."
+pip install numpy
+
 # Install dependencies
 echo ""
 echo "[INFO] Installing dependencies..."
