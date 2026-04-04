@@ -29,8 +29,6 @@ echo "[INFO] Checking GPU..."
 if nvidia-smi > /dev/null 2>&1; then
     echo "[INFO] NVIDIA GPU detected. Installing CUDA version of PyTorch."
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
-    # RTX5000 series and newer may use cu128, but cu118 is more widely compatible for now. Adjust as needed. 
-    #pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
 else
     echo "[INFO] No NVIDIA GPU detected. Installing CPU version of PyTorch."
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
