@@ -41,6 +41,16 @@ if errorlevel 1 (
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
 )
 
+REM Upgrade packaging tools first. Some deps still use legacy setup.py flows.
+echo.
+echo [INFO] Upgrading pip/setuptools/wheel...
+pip install -U pip setuptools wheel
+
+REM sox may import numpy during metadata generation, so install it before requirements.
+echo.
+echo [INFO] Installing numpy first...
+pip install numpy
+
 REM Install dependencies
 echo.
 echo [INFO] Installing dependencies...
