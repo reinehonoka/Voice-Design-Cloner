@@ -40,18 +40,19 @@
 
 | 項目 | 要件 |
 |---|---|
-| OS | Windows 11（動作確認済み）/ Linux（動作確認未済） |
+| OS | Windows 11 / Linux WSL2（動作確認済み） |
 | Python | 3.10〜3.12（推奨: 3.12） |
 | GPU | NVIDIA（CUDA対応） |
 | VRAM | 8GB〜（推奨: 16GB） |
 
 **動作確認済み環境:**
 
-| 項目 | バージョン / 型番 |
-|---|---|
-| OS | Windows 11 |
-| GPU | RTX 4060 Ti 16GB |
-| RAM | 128GB |
+| OS | GPU | VRAM | RAM |
+|---|---|---|---|
+| Windows 11 | RTX 4060 Ti | 16GB | 128GB |
+| Windows 11 | RTX 3060 | 12GB | 64GB |
+| Windows 11 / WSL2 (Ubuntu 22.04) | RTX 5070 | 12GB | — |
+| Windows 11 (VRAM 8GB) | — | 8GB | — |
 
 > CPU 単体動作は未確認です。
 
@@ -65,7 +66,7 @@
 3. 完了後、app.bat で起動
 ```
 
-**Linux の場合は `setup.sh` / `app.sh` を使用してください。動作確認は行っていません。**
+**Linux の場合は `setup.sh` / `app.sh` を使用してください。WSL2 (Ubuntu 22.04) で動作確認済みです。**
 
 `setup.bat` が venv の作成・PyTorch・依存ライブラリのインストールをすべて自動で行います。
 
@@ -176,3 +177,16 @@ Qwen3-TTS の学習データはブラックボックスであり、その内容�
 
 - バグ報告・機能要望: このリポジトリの GitHub Issues を利用してください
 - その他の連絡: [零音ほのかのXアカウント](https://x.com/ReineHonoka)のDMにてお願いいたします。
+
+## Special Thanks
+
+このプロジェクトの開発にご協力いただいた皆様に感謝いたします。
+
+### Testers
+
+- [フルエレ](https://x.com/fluele_alpha?s=20)
+- [きんくまん](https://x.com/kinkuman_net?s=20)
+- [ヒロナ](https://x.com/hirona98?s=20)
+
+### Contributors
+- kinkuman — fix: setup.sh numpy pre-install & pip upgrade
