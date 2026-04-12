@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 import soundfile as sf
-from config import VOICE_DESIGN_DIR
+from config import VOICE_DESIGN_DIR, TTS_LANG
 
 
 _SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9_.-]+")
@@ -23,7 +23,7 @@ def generate_voice_design(manager, text: str, instruct: str, **kwargs):
     manager.load_model("1.7B-VoiceDesign")
     wavs, sr = manager.current_model.generate_voice_design(
         text=text,
-        language="auto",
+        language=TTS_LANG,
         instruct=instruct,
         **kwargs,
     )

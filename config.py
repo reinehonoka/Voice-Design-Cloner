@@ -28,6 +28,14 @@ def save_lang(lang: str) -> None:
 
 LANG: str = _load_lang()
 
+# Mapping from UI language code to Qwen3-TTS language parameter
+_TTS_LANG_MAP = {
+    "ja": "japanese",
+    "en": "english",
+    "zh": "chinese",
+}
+TTS_LANG: str = _TTS_LANG_MAP.get(LANG, "auto")
+
 # Defaults
 _SAMPLE_TEXTS = {
     "ja": "こんにちは、はじめまして。私の声はいかがですか？",

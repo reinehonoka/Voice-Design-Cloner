@@ -31,6 +31,7 @@ def build_voice_clone_tab(manager: ModelManager):
     resolved_ref_path = gr.State(None)
     ref_mode = gr.State(t("vc_ref_tab_shortcut"))
     corpus_mode = gr.State(t("vc_corpus_tab_file"))
+    corpus_lang_state = gr.State("ja")
 
     with gr.Row():
         # ── Left ──
@@ -66,10 +67,10 @@ def build_voice_clone_tab(manager: ModelManager):
             with gr.Group():
                 with gr.Tabs():
                     with gr.Tab(t("vc_corpus_tab_file")):
-                        corpus_files = list_corpus_files()
+                        corpus_files = list_corpus_files("ja")
                         initial_corpus = corpus_files[0] if corpus_files else None
                         if initial_corpus:
-                            _init_texts = load_corpus(initial_corpus)
+                            _init_texts = load_corpus(initial_corpus, "ja")
                             _init_chars = sum(len(t_) for t_ in _init_texts)
                         else:
                             _init_texts, _init_chars = [], 0
@@ -83,6 +84,12 @@ def build_voice_clone_tab(manager: ModelManager):
                             label=t("vc_corpus_upload_label"),
                             file_types=[".txt"],
                         )
+
+                corpus_lang_radio = gr.Radio(
+                    choices=["JA", "EN", "ZH"],
+                    value="JA",
+                    label=t("vc_corpus_lang_label"),
+                )
 
                 with gr.Row():
                     corpus_count = gr.Number(
@@ -158,10 +165,35 @@ def build_voice_clone_tab(manager: ModelManager):
         outputs=[ref_mode],
     )
 
-    # ── Corpus: dropdown ──
-    def on_corpus_dropdown_change(corpus_file, uploaded_file, count):
+    # ── Corpus: language selector ──
+    _LANG_CODE = {"JA": "ja", "EN": "en", "ZH": "zh"}
+
+    def on_corpus_lang_change(lang_choice, count):
+        lang = _LANG_CODE.get(lang_choice, "ja")
+        files = list_corpus_files(lang)
+        first = files[0] if files else None
         try:
-            texts = load_corpus(corpus_file) if corpus_file else []
+            texts = load_corpus(first, lang) if first else []
+        except Exception:
+            texts = []
+        total = len(texts)
+        limit = int(count) if count and int(count) > 0 else 0
+        used = min(limit, total) if limit > 0 else total
+        used_chars = sum(len(tx) for tx in texts[:used])
+        lines_str = f"{used} / {total}" if texts else ""
+        chars_str = f"{used_chars}" if texts else ""
+        return lang, gr.update(choices=files, value=first), lines_str, chars_str
+
+    corpus_lang_radio.change(
+        fn=on_corpus_lang_change,
+        inputs=[corpus_lang_radio, corpus_count],
+        outputs=[corpus_lang_state, corpus_dropdown, corpus_total_lines, corpus_total_chars],
+    )
+
+    # ── Corpus: dropdown ──
+    def on_corpus_dropdown_change(corpus_file, uploaded_file, count, lang):
+        try:
+            texts = load_corpus(corpus_file, lang) if corpus_file else []
         except Exception as e:
             logger.exception("Failed to load corpus from dropdown: %s", corpus_file)
             return t("vc_corpus_tab_file"), t("vc_err_file_load").format(e), ""
@@ -175,15 +207,15 @@ def build_voice_clone_tab(manager: ModelManager):
 
     corpus_dropdown.change(
         fn=on_corpus_dropdown_change,
-        inputs=[corpus_dropdown, upload_file, corpus_count],
+        inputs=[corpus_dropdown, upload_file, corpus_count, corpus_lang_state],
         outputs=[corpus_mode, corpus_total_lines, corpus_total_chars],
     )
 
     # ── Corpus: upload ──
-    def on_upload_change(uploaded_file, corpus_file, count):
+    def on_upload_change(uploaded_file, corpus_file, count, lang):
         try:
             if not uploaded_file:
-                texts = load_corpus(corpus_file) if corpus_file else []
+                texts = load_corpus(corpus_file, lang) if corpus_file else []
                 mode = t("vc_corpus_tab_file")
             else:
                 filepath = _resolve_uploaded_path(uploaded_file)
@@ -204,12 +236,12 @@ def build_voice_clone_tab(manager: ModelManager):
 
     upload_file.change(
         fn=on_upload_change,
-        inputs=[upload_file, corpus_dropdown, corpus_count],
+        inputs=[upload_file, corpus_dropdown, corpus_count, corpus_lang_state],
         outputs=[corpus_mode, corpus_total_lines, corpus_total_chars],
     )
 
     # ── Corpus count / refresh ──
-    def on_info_refresh(mode, corpus_file, uploaded_file, count):
+    def on_info_refresh(mode, corpus_file, uploaded_file, count, lang):
         try:
             if mode == t("vc_corpus_tab_upload") and uploaded_file:
                 filepath = _resolve_uploaded_path(uploaded_file)
@@ -217,7 +249,7 @@ def build_voice_clone_tab(manager: ModelManager):
                     raise ValueError(t("vc_err_upload_path"))
                 texts = _read_uploaded_text_file(filepath)
             elif corpus_file:
-                texts = load_corpus(corpus_file)
+                texts = load_corpus(corpus_file, lang)
             else:
                 return "", ""
         except Exception as e:
@@ -231,17 +263,17 @@ def build_voice_clone_tab(manager: ModelManager):
 
     corpus_count.change(
         fn=on_info_refresh,
-        inputs=[corpus_mode, corpus_dropdown, upload_file, corpus_count],
+        inputs=[corpus_mode, corpus_dropdown, upload_file, corpus_count, corpus_lang_state],
         outputs=[corpus_total_lines, corpus_total_chars],
     )
     corpus_refresh_btn.click(
         fn=on_info_refresh,
-        inputs=[corpus_mode, corpus_dropdown, upload_file, corpus_count],
+        inputs=[corpus_mode, corpus_dropdown, upload_file, corpus_count, corpus_lang_state],
         outputs=[corpus_total_lines, corpus_total_chars],
     )
 
     # ── Clone ──
-    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, out_folder, wavs_name, esd_name, sr, resolved_path, progress=gr.Progress()):
+    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, out_folder, wavs_name, esd_name, sr, resolved_path, corpus_lang, progress=gr.Progress()):
         if r_mode == t("vc_ref_tab_upload") and uploaded_audio:
             ref = _resolve_uploaded_path(uploaded_audio)
         elif resolved_path:
@@ -266,7 +298,7 @@ def build_voice_clone_tab(manager: ModelManager):
                     raise ValueError(t("vc_err_upload_path"))
                 texts = _read_uploaded_text_file(filepath)
             elif corpus_file:
-                texts = load_corpus(corpus_file)
+                texts = load_corpus(corpus_file, corpus_lang)
             else:
                 yield t("vc_err_no_text"), ""
                 return
@@ -294,6 +326,7 @@ def build_voice_clone_tab(manager: ModelManager):
                 wavs_folder=wavs_name.strip() or "raw",
                 esd_filename=esd,
                 model_key=model, target_sr=int(sr),
+                corpus_lang=corpus_lang,
             ):
                 if isinstance(payload, dict):
                     stats = payload
@@ -320,6 +353,7 @@ def build_voice_clone_tab(manager: ModelManager):
             ref_mode, shortcut_dropdown, upload_audio, ref_text,
             corpus_mode, corpus_dropdown, upload_file, corpus_count,
             model_choice, output_folder, wavs_folder, esd_filename, target_sr, resolved_ref_path,
+            corpus_lang_state,
         ],
         outputs=[progress_text, result_text],
     )
