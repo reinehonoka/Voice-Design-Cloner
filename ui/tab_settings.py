@@ -1,53 +1,79 @@
-"""Settings tab: backend selection and system info."""
+"""Settings tab: backend selection, language switching, and system info."""
 
+import os
+import sys
+import time
+import threading
+import subprocess
 import gradio as gr
 from modules.model_manager import ModelManager, BACKENDS, _faster_available
+from config import LANG, save_lang
+from lang import t
+
+_LANG_CHOICES = [
+    ("日本語", "ja"),
+    ("English", "en"),
+    ("中文", "zh"),
+]
 
 
 def build_settings_tab(manager: ModelManager):
     with gr.Row():
         with gr.Column(scale=2):
-            gr.Markdown("### 推論バックエンド")
+            gr.Markdown(t("settings_backend_section"))
             with gr.Group():
-                gr.Markdown(
-                    "**faster**: CUDA Graph高速化（6-10倍速、GPU専用）\n\n"
-                    "**standard**: 標準推論（CPU/GPU両対応）"
-                )
+                gr.Markdown(t("settings_backend_desc"))
                 backend_dropdown = gr.Dropdown(
                     choices=BACKENDS,
                     value=manager.backend,
-                    label="バックエンド",
+                    label=t("settings_backend_label"),
                     interactive=_faster_available(),
                 )
                 backend_status = gr.Textbox(
                     value=_backend_status_text(manager),
-                    label="ステータス",
+                    label=t("settings_backend_status_label"),
                     interactive=False,
                 )
 
         with gr.Column(scale=2):
-            gr.Markdown("### システム情報")
+            gr.Markdown(t("settings_sysinfo_section"))
             with gr.Group():
                 gr.Textbox(
                     value=manager.get_gpu_name(),
-                    label="GPU", interactive=False,
+                    label=t("settings_gpu_label"), interactive=False,
                 )
                 vram_info = gr.Textbox(
                     value=manager.get_vram_info(),
-                    label="VRAM", interactive=False,
+                    label=t("settings_vram_label"), interactive=False,
                 )
                 gr.Textbox(
-                    value="インストール済み" if _faster_available() else "未インストール（pip install faster-qwen3-tts）",
+                    value=t("settings_faster_installed") if _faster_available() else t("settings_faster_not_installed"),
                     label="faster-qwen3-tts", interactive=False,
                 )
-                refresh_btn = gr.Button("更新", variant="secondary")
+                refresh_btn = gr.Button(t("settings_btn_refresh"), variant="secondary")
 
+    gr.HTML("<div style='height: 12px'></div>")
+
+    with gr.Row():
+        with gr.Column(scale=2):
+            gr.Markdown(t("settings_lang_section"))
+            with gr.Group():
+                lang_dropdown = gr.Dropdown(
+                    choices=[label for label, _ in _LANG_CHOICES],
+                    value=_lang_label(LANG),
+                    label=t("settings_lang_label"),
+                )
+                gr.Markdown(f"_{t('settings_lang_note')}_")
+                lang_btn = gr.Button("Apply & Restart", variant="primary")
+                lang_status = gr.Textbox(label="Status", interactive=False)
+
+    # ── Backend ──
     def on_backend_change(backend):
         try:
             manager.set_backend(backend)
             return _backend_status_text(manager)
         except Exception as e:
-            return f"エラー: {e}"
+            return t("settings_backend_err").format(e)
 
     backend_dropdown.change(
         fn=on_backend_change,
@@ -60,9 +86,48 @@ def build_settings_tab(manager: ModelManager):
 
     refresh_btn.click(fn=on_refresh, outputs=[vram_info])
 
+    # ── Language ──
+    def on_apply_lang(label):
+        code = _lang_code(label)
+        try:
+            save_lang(code)
+        except Exception as e:
+            return t("settings_lang_save_fail").format(e)
+
+        def _restart():
+            time.sleep(1.5)
+            env = os.environ.copy()
+            env["VDC_RESTART"] = "1"
+            subprocess.Popen([sys.executable] + sys.argv, env=env)
+            os._exit(0)
+
+        threading.Thread(target=_restart, daemon=True).start()
+        return "再起動中... / Restarting... / 重启中..."
+
+    lang_btn.click(
+        fn=on_apply_lang,
+        inputs=[lang_dropdown],
+        outputs=[lang_status],
+        js="(label) => { setTimeout(() => { function poll(){ fetch('/').then(() => location.reload()).catch(() => setTimeout(poll, 500)); } poll(); }, 2000); return [label]; }",
+    )
+
+
+def _lang_label(code: str) -> str:
+    for label, c in _LANG_CHOICES:
+        if c == code:
+            return label
+    return _LANG_CHOICES[0][0]
+
+
+def _lang_code(label: str) -> str:
+    for lbl, code in _LANG_CHOICES:
+        if lbl == label:
+            return code
+    return "ja"
+
 
 def _backend_status_text(manager: ModelManager) -> str:
-    status = f"現在: {manager.backend}"
+    status = t("settings_backend_current").format(manager.backend)
     if not _faster_available():
-        status += "（faster未インストール）"
+        status += t("settings_backend_no_faster")
     return status

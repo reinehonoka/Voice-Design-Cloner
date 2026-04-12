@@ -4,8 +4,9 @@ import logging
 import gradio as gr
 from modules.voice_design import generate_voice_design, save_voice
 from modules.translator import Translator
-from modules.utils import load_presets
+from modules.utils import load_presets_localized
 from config import DEFAULT_SAMPLE_TEXT
+from lang import t
 
 translator = Translator()
 translator.preload()
@@ -20,91 +21,98 @@ DEFAULTS = {
 
 
 def build_voice_design_tab(manager):
-    presets_zh = load_presets("zh")
-    presets_en = load_presets("en")
+    presets_ja = load_presets_localized("ja")
+    presets_zh = load_presets_localized("zh")
+    presets_en = load_presets_localized("en")
 
     with gr.Row():
         # ── Left: 1. Prompt + 2. Params ──
         with gr.Column(scale=3):
-            gr.Markdown("### 1. ボイスプロンプト")
-            gr.Markdown("生成したい声の特徴を記述（言語不問）")
+            gr.Markdown(t("vd_prompt_section"))
+            gr.Markdown(t("vd_prompt_desc"))
 
             with gr.Group():
                 instruct_text = gr.Textbox(
-                    label="LLMプロンプト",
+                    label=t("vd_prompt_label"),
                     lines=5,
-                    placeholder="例: 落ち着いた大人の女性の声、低めのトーン（日本語OK → 下のボタンで翻訳）",
+                    placeholder=t("vd_prompt_placeholder"),
                 )
 
             with gr.Row():
-                with gr.Column(scale=1, min_width=160):
-                    translate_zh_btn = gr.Button("中国語に翻訳", variant="secondary")
-                with gr.Column(scale=1, min_width=160):
-                    translate_en_btn = gr.Button("英語に翻訳", variant="secondary")
+                with gr.Column(scale=1, min_width=120):
+                    translate_ja_btn = gr.Button(t("vd_btn_translate_ja"), variant="secondary")
+                with gr.Column(scale=1, min_width=120):
+                    translate_zh_btn = gr.Button(t("vd_btn_translate_zh"), variant="secondary")
+                with gr.Column(scale=1, min_width=120):
+                    translate_en_btn = gr.Button(t("vd_btn_translate_en"), variant="secondary")
 
             gr.HTML("<div style='height: 8px'></div>")
 
-            with gr.Accordion("プリセットから選ぶ", open=False):
+            with gr.Accordion(t("vd_preset_accordion"), open=False):
                 with gr.Row():
+                    preset_ja = gr.Dropdown(
+                        choices=list(presets_ja.keys()),
+                        label=t("vd_preset_ja_label"), value=None,
+                    )
                     preset_zh = gr.Dropdown(
                         choices=list(presets_zh.keys()),
-                        label="中国語", value=None,
+                        label=t("vd_preset_zh_label"), value=None,
                     )
                     preset_en = gr.Dropdown(
                         choices=list(presets_en.keys()),
-                        label="英語", value=None,
+                        label=t("vd_preset_en_label"), value=None,
                     )
-                    clear_preset_btn = gr.Button("クリア", size="sm", min_width=80)
+                    clear_preset_btn = gr.Button(t("vd_btn_clear_preset"), size="sm", min_width=80)
 
             gr.HTML("<div style='height: 12px'></div>")
 
-            gr.Markdown("### 2. 生成パラメータ")
+            gr.Markdown(t("vd_params_section"))
             with gr.Group():
                 temperature = gr.Slider(
                     minimum=0.1, maximum=1.0, step=0.05,
-                    value=DEFAULTS["temperature"], label="Temperature（高い=表現豊か / 低い=安定）",
+                    value=DEFAULTS["temperature"], label=t("vd_temperature_label"),
                 )
                 top_p = gr.Slider(
                     minimum=0.1, maximum=1.0, step=0.05,
-                    value=DEFAULTS["top_p"], label="Top-P（低いほど品質安定）",
+                    value=DEFAULTS["top_p"], label=t("vd_top_p_label"),
                 )
                 top_k = gr.Slider(
                     minimum=1, maximum=100, step=1,
-                    value=DEFAULTS["top_k"], label="Top-K（候補トークン数）",
+                    value=DEFAULTS["top_k"], label=t("vd_top_k_label"),
                 )
                 rep_penalty = gr.Slider(
                     minimum=1.0, maximum=1.5, step=0.01,
-                    value=DEFAULTS["repetition_penalty"], label="繰り返しペナルティ",
+                    value=DEFAULTS["repetition_penalty"], label=t("vd_rep_penalty_label"),
                 )
-                reset_params_btn = gr.Button("デフォルトに戻す")
+                reset_params_btn = gr.Button(t("vd_btn_reset_params"))
 
         # ── Right: 3. Sample text + 4. Preview + 5. Save ──
         with gr.Column(scale=2):
-            gr.Markdown("### 3. 読み上げテキスト")
-            gr.Markdown("この声で読み上げる文章")
+            gr.Markdown(t("vd_sample_section"))
+            gr.Markdown(t("vd_sample_desc"))
             with gr.Group():
                 sample_text = gr.Textbox(
-                    label="読み上げテキスト",
+                    label=t("vd_sample_label"),
                     value=DEFAULT_SAMPLE_TEXT,
                     lines=2,
                 )
 
             gr.HTML("<div style='height: 12px'></div>")
 
-            gr.Markdown("### 4. プレビュー")
+            gr.Markdown(t("vd_preview_section"))
             with gr.Group():
-                audio_preview = gr.Audio(label="プレビュー", type="numpy")
-                status = gr.Textbox(label="ステータス", interactive=False)
+                audio_preview = gr.Audio(label=t("vd_preview_label"), type="numpy")
+                status = gr.Textbox(label=t("vd_status_label"), interactive=False)
                 with gr.Row():
-                    generate_btn = gr.Button("生成", variant="primary", scale=2)
-                    reroll_btn = gr.Button("再生成", variant="secondary", scale=1)
+                    generate_btn = gr.Button(t("vd_btn_generate"), variant="primary", scale=2)
+                    reroll_btn = gr.Button(t("vd_btn_reroll"), variant="secondary", scale=1)
 
             gr.HTML("<div style='height: 12px'></div>")
 
-            gr.Markdown("### 5. 保存")
+            gr.Markdown(t("vd_save_section"))
             with gr.Group():
-                save_name = gr.Textbox(label="保存名", value="voice_design")
-                keep_btn = gr.Button("保存", variant="primary")
+                save_name = gr.Textbox(label=t("vd_save_name_label"), value="voice_design")
+                keep_btn = gr.Button(t("vd_btn_save"), variant="primary")
 
     state_path = gr.State()
 
@@ -114,54 +122,64 @@ def build_voice_design_tab(manager):
         outputs=[temperature, top_p, top_k, rep_penalty],
     )
 
-    # ── Translation (single step: clear presets + translate) ──
+    # ── Translation ──
     def do_translate(text, lang):
         if not text.strip():
-            return "テキストを入力してください", None, None
+            return t("vd_err_translate_empty"), None, None, None
         try:
             result = translator.translate(text, lang)
-            return result, None, None
+            return result, None, None, None
         except Exception as e:
             logger.exception("Translation failed")
-            return f"翻訳エラー: {e}", None, None
+            return t("vd_err_translate_fail").format(e), None, None, None
 
+    translate_ja_btn.click(
+        fn=lambda text: do_translate(text, "ja"), inputs=[instruct_text],
+        outputs=[instruct_text, preset_ja, preset_zh, preset_en]
+    )
     translate_zh_btn.click(
-        fn=lambda t: do_translate(t, "zh"), inputs=[instruct_text],
-        outputs=[instruct_text, preset_zh, preset_en]
+        fn=lambda text: do_translate(text, "zh"), inputs=[instruct_text],
+        outputs=[instruct_text, preset_ja, preset_zh, preset_en]
     )
     translate_en_btn.click(
-        fn=lambda t: do_translate(t, "en"), inputs=[instruct_text],
-        outputs=[instruct_text, preset_zh, preset_en]
+        fn=lambda text: do_translate(text, "en"), inputs=[instruct_text],
+        outputs=[instruct_text, preset_ja, preset_zh, preset_en]
     )
 
     # ── Presets ──
+    def on_preset_ja(name):
+        if not name:
+            return gr.update(), gr.update(), gr.update()
+        return presets_ja.get(name, ""), None, None
+
     def on_preset_zh(name):
         if not name:
-            return gr.update(), gr.update()
-        return presets_zh.get(name, ""), None
+            return gr.update(), gr.update(), gr.update()
+        return presets_zh.get(name, ""), None, None
 
     def on_preset_en(name):
         if not name:
-            return gr.update(), gr.update()
-        return presets_en.get(name, ""), None
+            return gr.update(), gr.update(), gr.update()
+        return presets_en.get(name, ""), None, None
 
-    preset_zh.change(fn=on_preset_zh, inputs=[preset_zh], outputs=[instruct_text, preset_en])
-    preset_en.change(fn=on_preset_en, inputs=[preset_en], outputs=[instruct_text, preset_zh])
-    clear_preset_btn.click(fn=lambda: (None, None, ""), outputs=[preset_zh, preset_en, instruct_text])
+    preset_ja.change(fn=on_preset_ja, inputs=[preset_ja], outputs=[instruct_text, preset_zh, preset_en])
+    preset_zh.change(fn=on_preset_zh, inputs=[preset_zh], outputs=[instruct_text, preset_ja, preset_en])
+    preset_en.change(fn=on_preset_en, inputs=[preset_en], outputs=[instruct_text, preset_ja, preset_zh])
+    clear_preset_btn.click(fn=lambda: (None, None, None, ""), outputs=[preset_ja, preset_zh, preset_en, instruct_text])
 
     # ── Generate ──
     def on_generate(instruct, sample, temp, tp, tk, rp):
         if not instruct.strip():
-            return None, None, "ボイス指示が空です"
+            return None, None, t("vd_err_empty_prompt")
         try:
             sr, audio = generate_voice_design(
                 manager, sample, instruct,
                 temperature=temp, top_p=tp, top_k=int(tk), repetition_penalty=rp,
             )
-            return (sr, audio), (sr, audio), f"生成完了 ({sr}Hz)"
+            return (sr, audio), (sr, audio), t("vd_ok_generated").format(sr)
         except Exception as e:
             logger.exception("Voice design generation failed")
-            return None, None, f"エラー: {e}"
+            return None, None, t("vd_err_generate_fail").format(e)
 
     gen_inputs = [instruct_text, sample_text, temperature, top_p, top_k, rep_penalty]
     gen_outputs = [audio_preview, state_path, status]
@@ -171,12 +189,12 @@ def build_voice_design_tab(manager):
 
     def on_keep(audio_data, name, sample):
         if audio_data is None:
-            return "保存する音声がありません"
+            return t("vd_err_no_audio")
         try:
             dest = save_voice(audio_data, name, sample_text=sample)
-            return f"保存完了: {dest}"
+            return t("vd_ok_saved").format(dest)
         except Exception as e:
             logger.exception("Voice save failed")
-            return f"エラー: {e}"
+            return t("vd_err_save_fail").format(e)
 
     keep_btn.click(fn=on_keep, inputs=[state_path, save_name, sample_text], outputs=[status])

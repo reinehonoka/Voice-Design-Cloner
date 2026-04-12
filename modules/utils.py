@@ -2,9 +2,30 @@
 
 import json
 import logging
-from config import PRESETS_DIR, CORPUS_DIR
+from config import PRESETS_DIR, CORPUS_DIR, LANG
 
 logger = logging.getLogger(__name__)
+
+
+def _load_name_map() -> list[dict]:
+    path = PRESETS_DIR / "preset_name_map.json"
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_presets_localized(prompt_lang: str) -> dict:
+    """Load presets for prompt_lang, with display names in the current UI language.
+    Returns {localized_display_name: prompt_text}."""
+    prompts = load_presets(prompt_lang)  # keyed by Japanese canonical name
+    name_map = _load_name_map()
+    result = {}
+    for entry in name_map:
+        ja_key = entry["ja"]
+        display_name = entry.get(LANG, ja_key)
+        prompt = prompts.get(ja_key, "")
+        if prompt:
+            result[display_name] = prompt
+    return result
 
 
 def load_presets(lang: str = "zh") -> dict:

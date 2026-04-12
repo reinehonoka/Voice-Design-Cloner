@@ -1,5 +1,6 @@
 """VoiceDesignCloner — Qwen3-TTS GUI Tool."""
 
+import os
 import sys
 import io
 import warnings
@@ -8,6 +9,7 @@ import logging
 import asyncio
 import gradio as gr
 from modules.model_manager import ModelManager
+from lang import t
 from ui.tab_voice_design import build_voice_design_tab
 from ui.tab_voice_clone import build_voice_clone_tab
 from ui.tab_tools import build_tools_tab
@@ -69,21 +71,21 @@ with gr.Blocks(title="VoiceDesignCloner", theme="NoCrypt/miku") as demo:
     gr.Markdown("# VoiceDesignCloner")
 
     with gr.Tabs():
-        with gr.Tab("Voice Design"):
+        with gr.Tab(t("tab_voice_design")):
             build_voice_design_tab(manager)
-        with gr.Tab("Voice Clone"):
+        with gr.Tab(t("tab_voice_clone")):
             build_voice_clone_tab(manager)
-        with gr.Tab("Tools"):
+        with gr.Tab(t("tab_tools")):
             build_tools_tab()
-        with gr.Tab("Settings"):
+        with gr.Tab(t("tab_settings")):
             build_settings_tab(manager)
-        with gr.Tab("Manual"):
+        with gr.Tab(t("tab_manual")):
             build_manual_tab()
 
 demo.queue(default_concurrency_limit=1)
 demo.launch(
     server_name="127.0.0.1",
     server_port=7860,
-    inbrowser=True,
+    inbrowser=os.environ.get("VDC_RESTART") != "1",
     share=False,
 )

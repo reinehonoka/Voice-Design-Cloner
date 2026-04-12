@@ -41,7 +41,7 @@ class Translator:
         return "zh"
 
     def translate(self, text: str, target_lang: str) -> str:
-        """Translate text to target_lang ('zh' or 'en'). Auto-detects source."""
+        """Translate text to target_lang ('ja', 'zh', or 'en'). Auto-detects source."""
         if not text.strip():
             return ""
         self._load_model()  # waits for preload if still running

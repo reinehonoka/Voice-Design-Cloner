@@ -7,6 +7,7 @@ import gradio as gr
 import librosa
 import soundfile as sf
 from config import OUTPUT_DIR, VOICE_DESIGN_DIR
+from lang import t
 
 _EXCLUDE_NAMES = {"voice_design", "_resampled"}
 
@@ -25,52 +26,57 @@ def build_tools_tab():
     with gr.Row():
         # ── Left: Resample ──
         with gr.Column(scale=3):
-            gr.Markdown("### リサンプル")
-            gr.Markdown("outputフォルダの raw/ 内WAVを一括リサンプルして resampled/ に出力します。")
+            gr.Markdown(t("tools_resample_section"))
+            gr.Markdown(t("tools_resample_desc"))
             with gr.Group():
                 resample_folder = gr.Dropdown(
                     choices=_list_output_folders(),
-                    label="フォルダ選択",
+                    label=t("tools_resample_folder_label"),
                     interactive=True,
                 )
                 resample_sr = gr.Dropdown(
                     choices=[44100, 48000, 24000, 22050],
                     value=44100,
-                    label="出力サンプルレート (Hz)",
+                    label=t("tools_resample_sr_label"),
                 )
-                resample_btn = gr.Button("リサンプル実行", variant="primary")
-                resample_status = gr.Textbox(label="ステータス", interactive=False, lines=3)
-            resample_refresh_btn = gr.Button("更新", variant="secondary")
+                resample_btn = gr.Button(t("tools_btn_resample"), variant="primary")
+                resample_status = gr.Textbox(label=t("tools_resample_status_label"), interactive=False, lines=3)
+            resample_refresh_btn = gr.Button(t("tools_btn_resample_refresh"), variant="secondary")
 
         # ── Right: esd.list ──
         with gr.Column(scale=2):
-            gr.Markdown("### esd.list 生成")
-            gr.Markdown("outputフォルダを選択して raw/*.wav とテキストリストから esd.list を生成します。")
+            gr.Markdown(t("tools_esd_section"))
+            gr.Markdown(t("tools_esd_desc"))
             with gr.Group():
                 esd_folder = gr.Dropdown(
                     choices=_list_output_folders(),
-                    label="フォルダ選択",
+                    label=t("tools_esd_folder_label"),
                     interactive=True,
                 )
                 speaker_name = gr.Textbox(
-                    label="話者名（esd.listのspeaker列）",
-                    placeholder="フォルダ名が自動入力されます",
+                    label=t("tools_esd_speaker_label"),
+                    placeholder="",
                 )
-                esd_btn = gr.Button("esd.list 生成", variant="primary")
-                esd_status = gr.Textbox(label="ステータス", interactive=False, lines=3)
-            esd_refresh_btn = gr.Button("更新", variant="secondary")
+                esd_lang = gr.Dropdown(
+                    choices=["JP", "EN", "ZH"],
+                    value="JP",
+                    label=t("tools_esd_lang_label"),
+                )
+                esd_btn = gr.Button(t("tools_btn_esd"), variant="primary")
+                esd_status = gr.Textbox(label=t("tools_esd_status_label"), interactive=False, lines=3)
+            esd_refresh_btn = gr.Button(t("tools_btn_esd_refresh"), variant="secondary")
 
     # ── Audio Info ──
     gr.HTML("<div style='height: 12px'></div>")
-    gr.Markdown("### 音声情報")
-    gr.Markdown("WAVファイルをアップロードして秒数・サンプルレートを確認します。")
+    gr.Markdown(t("tools_audio_info_section"))
+    gr.Markdown(t("tools_audio_info_desc"))
     with gr.Group():
         info_files = gr.File(
-            label="WAVファイル（複数可）",
+            label=t("tools_audio_files_label"),
             file_count="multiple",
             file_types=[".wav"],
         )
-        audio_info = gr.Textbox(label="ファイル情報", interactive=False, lines=6)
+        audio_info = gr.Textbox(label=t("tools_audio_info_label"), interactive=False, lines=6)
 
     # ── Resample logic ──
     def on_resample_refresh():
@@ -81,16 +87,16 @@ def build_tools_tab():
 
     def on_resample(folder, sr, progress=gr.Progress()):
         if not folder:
-            return "エラー: フォルダを選択してください"
+            return t("tools_err_no_folder")
         sr = int(sr)
         base_dir = OUTPUT_DIR / folder
         raw_dir = base_dir / "raw"
         out_dir = base_dir / "resampled"
         if not raw_dir.exists():
-            return f"エラー: {raw_dir} が見つかりません"
+            return t("tools_err_raw_not_found").format(raw_dir)
         wav_files = sorted(glob.glob(str(raw_dir / "*.wav")))
         if not wav_files:
-            return "エラー: raw/ にWAVファイルがありません"
+            return t("tools_err_no_wavs")
         os.makedirs(str(out_dir), exist_ok=True)
         total = len(wav_files)
         start = time.time()
@@ -102,7 +108,7 @@ def build_tools_tab():
             sf.write(str(out_dir / fname), audio, sr, subtype="PCM_16")
             progress((i + 1) / total, f"{i + 1}/{total}")
         elapsed = time.time() - start
-        return f"完了: {total}ファイルをリサンプル ({elapsed:.1f}秒)\n出力先: {out_dir}"
+        return t("tools_resample_done").format(total, elapsed, out_dir)
 
     resample_btn.click(fn=on_resample, inputs=[resample_folder, resample_sr], outputs=[resample_status])
 
@@ -123,29 +129,29 @@ def build_tools_tab():
                 dur = info.duration
                 sr_val = info.samplerate
                 ch_val = info.channels
-                bit_val = info.subtype  # e.g. "PCM_16"
+                bit_val = info.subtype
                 total_duration += dur
                 sr_set.add(sr_val)
                 ch_set.add(ch_val)
                 bit_set.add(bit_val)
-                ch_label = "モノラル" if ch_val == 1 else f"{ch_val}ch"
+                ch_label = t("tools_audio_mono") if ch_val == 1 else t("tools_audio_multi_ch").format(ch_val)
                 bit_label = "16bit" if bit_val == "PCM_16" else "24bit" if bit_val == "PCM_24" else "32bit" if bit_val == "PCM_32" else bit_val
-                lines.append(f"  {fname}: {dur:.1f}秒 / {sr_val}Hz / {ch_label} / {bit_label}")
+                lines.append(f"  {fname}: {dur:.1f}s / {sr_val}Hz / {ch_label} / {bit_label}")
             except Exception:
-                lines.append(f"  {fname}: 読み取れません")
-        header = f"ファイル数: {len(files)} / 合計: {total_duration:.1f}秒 ({total_duration / 60:.1f}分)"
+                lines.append(t("tools_audio_unreadable").format(fname))
+        header = t("tools_audio_files").format(len(files), total_duration, total_duration / 60)
         if len(sr_set) == 1 and len(ch_set) == 1 and len(bit_set) == 1:
-            ch_label = "モノラル" if list(ch_set)[0] == 1 else f"{list(ch_set)[0]}ch"
+            ch_label = t("tools_audio_mono") if list(ch_set)[0] == 1 else t("tools_audio_multi_ch").format(list(ch_set)[0])
             raw_bit = list(bit_set)[0]
             bit_label = "16bit" if raw_bit == "PCM_16" else "24bit" if raw_bit == "PCM_24" else "32bit" if raw_bit == "PCM_32" else raw_bit
-            header += f"\n全ファイル一致: {list(sr_set)[0]}Hz / {ch_label} / {bit_label}"
+            header += t("tools_audio_all_match").format(list(sr_set)[0], ch_label, bit_label)
         else:
             if len(sr_set) > 1:
-                header += f"\n⚠ サンプルレート不一致: {sorted(sr_set)}"
+                header += t("tools_audio_sr_mismatch").format(sorted(sr_set))
             if len(ch_set) > 1:
-                header += f"\n⚠ チャンネル数不一致: {sorted(ch_set)}"
+                header += t("tools_audio_ch_mismatch").format(sorted(ch_set))
             if len(bit_set) > 1:
-                header += f"\n⚠ ビット深度不一致: {sorted(bit_set)}"
+                header += t("tools_audio_bit_mismatch").format(sorted(bit_set))
         return header + "\n" + "\n".join(lines)
 
     info_files.change(fn=on_files_change, inputs=[info_files], outputs=[audio_info])
@@ -159,21 +165,19 @@ def build_tools_tab():
 
     esd_folder.change(fn=lambda folder: folder or "", inputs=[esd_folder], outputs=[speaker_name])
 
-    def on_generate_esd(folder, speaker):
+    def on_generate_esd(folder, speaker, lang_code):
         if not folder:
-            return "エラー: フォルダを選択してください"
+            return t("tools_err_no_folder")
         base_dir = OUTPUT_DIR / folder
         if not base_dir.exists():
-            return f"エラー: {base_dir} が存在しません"
+            return t("tools_err_folder_not_exist").format(base_dir)
         speaker = speaker.strip() or folder
         raw_dir = base_dir / "raw"
         if not raw_dir.exists():
-            return f"エラー: {raw_dir} が見つかりません"
+            return t("tools_err_raw_not_found").format(raw_dir)
         wav_files = sorted(glob.glob(str(raw_dir / "*.wav")))
         if not wav_files:
-            return "エラー: raw/ にWAVファイルがありません"
-        # Load transcript: Neutral.txt — one line per file (line 1 = 0001.wav)
-        # Also supports legacy esd.list format (filename|speaker|lang|text)
+            return t("tools_err_no_wavs")
         txt_file = base_dir / "Neutral.txt"
         text_map = {}
         if txt_file.exists():
@@ -182,13 +186,10 @@ def build_tools_tab():
             for i, line in enumerate(lines):
                 parts = line.split("|")
                 if len(parts) >= 4:
-                    # legacy esd.list format: 0001.wav|speaker|JP|text
                     text_map[parts[0]] = parts[3]
                 elif len(parts) == 2:
-                    # Neutral.txt format: 0001|text
                     text_map[parts[0] + ".wav"] = parts[1]
                 else:
-                    # plain text fallback: line index → 0001.wav
                     text_map[f"{i + 1:04d}.wav"] = line
 
         esd_lines = []
@@ -199,15 +200,15 @@ def build_tools_tab():
             if not text:
                 skipped.append(fname)
                 continue
-            esd_lines.append(f"{fname}|{speaker}|JP|{text}")
+            esd_lines.append(f"{fname}|{speaker}|{lang_code}|{text}")
         if not esd_lines:
-            return "エラー: テキストが見つかりません。Neutral.txt等が必要です"
+            return t("tools_err_no_text")
         esd_path = base_dir / "esd.list"
         with open(esd_path, "w", encoding="utf-8") as f:
             f.write("\n".join(esd_lines))
-        msg = f"完了: {len(esd_lines)}行の esd.list を生成\n保存先: {esd_path}"
+        msg = t("tools_esd_done").format(len(esd_lines), esd_path)
         if skipped:
-            msg += f"\n⚠ テキスト未対応のためスキップ ({len(skipped)}件): {', '.join(skipped)}"
+            msg += t("tools_esd_skip").format(len(skipped), ", ".join(skipped))
         return msg
 
-    esd_btn.click(fn=on_generate_esd, inputs=[esd_folder, speaker_name], outputs=[esd_status])
+    esd_btn.click(fn=on_generate_esd, inputs=[esd_folder, speaker_name, esd_lang], outputs=[esd_status])
