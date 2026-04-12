@@ -7,7 +7,7 @@
 [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) の VoiceDesign と VoiceClone を GUI で操作できるツールです。
 声の設計から [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2) の学習に必要な教師データ作成まで、一気通貫で完結します。
 
-UI表示・梱包コーパス・音声生成言語をワンクリックで切り替え — JA / EN / ZH 対応
+**UI表示・梱包コーパス・音声生成言語をワンクリックで切り替え — JA / EN / ZH 対応**
 
 ---
 
@@ -34,7 +34,7 @@ UI表示・梱包コーパス・音声生成言語をワンクリックで切り
 
 ## スクリーンショット
 
-![screenshot](assets/スクリーンショット 2026-04-12 181600.png)
+![screenshot](assets/screenshot1.png)
 
 ---
 
