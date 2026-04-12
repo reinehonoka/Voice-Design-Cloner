@@ -163,30 +163,30 @@ _STRINGS: dict[str, dict[str, str]] = {
             "音声合成の学習で地味に面倒な**コーパスの用意・音声の量産・リサンプル**などが、これ一つで完結します。"
         ),
         "manual_voice_design": (
-            "### Voice Design タブ — 声を作る\n\n"
+            "### ボイスデザイン タブ — 声を作る\n\n"
             "1. **ボイスプロンプト** に作りたい声の特徴を書く\n"
-            "   - どの言語でも入力できますが、英語・中国語が推奨です\n"
-            "   - 翻訳ボタンで中国語・英語に変換できます\n"
-            "   - 「プリセットから選ぶ」に簡単なサンプルもあります\n"
+            "   - 日本語・英語・中国語で入力できます\n"
+            "   - 翻訳ボタンで日本語／中国語／英語に相互変換できます\n"
+            "   - 「プリセットから選ぶ」に日本語・中国語・英語のサンプルがあります\n"
             "2. **生成パラメータ** はデフォルトのままでもOK、好みに合わせて調整も可能\n"
             "3. **読み上げテキスト** にプレビュー用の文章を入力\n"
             "4. **生成** → プレビュー再生 → 気に入らなければ **再生成**\n"
             "5. 気に入ったら **保存名** を付けて **保存**\n"
             "   - `output/voice_design/` に `{保存名}.wav` と `{保存名}.txt` がセットで保存されます\n"
             "   - 同名が存在する場合は `_1`, `_2`... が自動付与されます\n"
-            "   - Voice Clone の「ショートカット」は `voice_design*.wav` 系の保存音声を対象にします"
+            "   - ボイスクローン の「ショートカット」は保存済み音声を対象にします"
         ),
         "manual_voice_clone": (
-            "### Voice Clone タブ — 声を量産する\n\n"
+            "### ボイスクローン タブ — 声を量産する\n\n"
             "1. **参照音声** を選ぶ\n"
-            "   - ショートカット: Voice Design で保存した声を番号で選択（書き起こしは自動入力）\n"
+            "   - ショートカット: ボイスデザインで保存した声を番号で選択（書き起こしは自動入力）\n"
             "   - アップロード: 自前の音声を使う場合（その声の書き起こしを手動入力）\n"
-            "2. **コーパス** を選ぶ（Settings の言語設定に応じて JP/EN/ZH コーパスが切り替わります）\n"
+            "2. **コーパス言語** を選ぶ（JA / EN / ZH）\n"
+            "   - 選択した言語のコーパスフォルダに切り替わり、モデルへの言語指示も連動します\n"
+            "3. **コーパスファイル** を選ぶ\n"
             "   - ita_emotion100（100文）、ita_recitation324（324文）、mana652（652文）、rohan4600（4600文）\n"
-            "   - all は上記すべてを結合したもの（5676文）\n"
             "   - アップロード: 自作の1行1文の .txt ファイルも使えます\n"
             "   - 「使用する文数」で先頭N文だけ生成可（0=すべて）\n"
-            "3. **言語** を選択（JP/EN/ZH） — モデルへの言語指示に使用\n"
             "4. **モデル** と **サンプルレート** を選択\n"
             "   - SBV2 で使うことを想定してデフォルトは 44100Hz\n"
             "5. **出力先** のフォルダ名を設定\n"
@@ -213,14 +213,19 @@ _STRINGS: dict[str, dict[str, str]] = {
             "| 1.7B-Base | ~7-8 GB |\n"
             "| 0.6B-Base | ~3-4 GB |"
         ),
-        "manual_backend": (
-            "### 推論バックエンド（Settings タブ）\n\n"
-            "Settings タブでバックエンドと表示言語を切り替えられます。\n\n"
+        "manual_settings": (
+            "### 設定 タブ\n\n"
+            "**バックエンド選択**\n\n"
             "| バックエンド | 速度 | 対応モデル | 備考 |\n"
             "|---|---|---|---|\n"
             "| **faster** | 約6-10倍速（RTF ~2.0） | 1.7B-VoiceDesign / 1.7B-Base | GPU必須 |\n"
             "| **standard** | 標準速度 | すべて | CPU/GPU両対応 |\n\n"
-            "**0.6B-Base は faster 非対応**です。"
+            "**0.6B-Base は faster 非対応**です。\n\n"
+            "**GPU 情報**\n\n"
+            "現在使用中の GPU 名と VRAM 使用量をリアルタイムで確認できます。\n\n"
+            "**表示言語**\n\n"
+            "UI の表示言語を日本語 / 英語 / 中国語から選択できます。\n"
+            "「Apply & Restart」ボタンを押すとアプリが再起動し、選択した言語で表示されます。"
         ),
     },
     "en": {
@@ -384,26 +389,28 @@ _STRINGS: dict[str, dict[str, str]] = {
         "manual_voice_design": (
             "### Voice Design Tab — Create a Voice\n\n"
             "1. Enter voice characteristics in **Voice Prompt**\n"
-            "   - Any language works, but English or Chinese is recommended\n"
-            "   - Use translation buttons to convert to Chinese/English\n"
-            "   - Presets are available in the accordion\n"
+            "   - Japanese, English, and Chinese are all supported\n"
+            "   - Use translation buttons to convert between Japanese / Chinese / English\n"
+            "   - Presets are available in Japanese, Chinese, and English\n"
             "2. **Generation Parameters** can be left at defaults\n"
             "3. Enter preview text in **Sample Text**\n"
             "4. **Generate** → Preview → **Re-roll** if unsatisfied\n"
             "5. Enter a **Save Name** and click **Save**\n"
             "   - Saved as `{name}.wav` + `{name}.txt` under `output/voice_design/`\n"
-            "   - Auto-appends `_1`, `_2`... if name already exists"
+            "   - Auto-appends `_1`, `_2`... if name already exists\n"
+            "   - Saved voices appear as shortcuts in the Voice Clone tab"
         ),
         "manual_voice_clone": (
             "### Voice Clone Tab — Mass-Produce Audio\n\n"
             "1. Choose a **Reference Voice**\n"
-            "   - Shortcut: select by number from saved Voice Design voices\n"
+            "   - Shortcut: select by number from saved Voice Design voices (transcript auto-filled)\n"
             "   - Upload: use your own audio (enter transcript manually)\n"
-            "2. Choose a **Corpus** (switches between JP/EN/ZH based on Settings language)\n"
+            "2. Select **Corpus Language** (JA / EN / ZH)\n"
+            "   - Switches the corpus folder and language instruction sent to the model\n"
+            "3. Choose a **Corpus File**\n"
             "   - ita_emotion100 (100), ita_recitation324 (324), mana652 (652), rohan4600 (4600)\n"
-            "   - all = all combined (5676 sentences)\n"
             "   - Upload: use a custom one-sentence-per-line .txt file\n"
-            "3. Select **Language** (JP/EN/ZH) — passed to the model\n"
+            "   - Set sentences to use (0 = all)\n"
             "4. Choose **Model** and **Sample Rate**\n"
             "5. Set **Output Folder** name\n"
             "6. Click **Start Batch Generation**\n\n"
@@ -429,14 +436,20 @@ _STRINGS: dict[str, dict[str, str]] = {
             "| 1.7B-Base | ~7-8 GB |\n"
             "| 0.6B-Base | ~3-4 GB |"
         ),
-        "manual_backend": (
-            "### Inference Backend (Settings Tab)\n\n"
-            "Switch backend and display language from the Settings tab.\n\n"
+        "manual_backend": "",
+        "manual_settings": (
+            "### Settings Tab\n\n"
+            "**Backend**\n\n"
             "| Backend | Speed | Models | Notes |\n"
             "|---|---|---|---|\n"
             "| **faster** | ~6-10x (RTF ~2.0) | 1.7B-VoiceDesign / 1.7B-Base | GPU required |\n"
             "| **standard** | Normal | All | CPU/GPU |\n\n"
-            "**0.6B-Base does not support faster** — auto falls back to standard."
+            "**0.6B-Base does not support faster** — auto falls back to standard.\n\n"
+            "**GPU Info**\n\n"
+            "Displays the current GPU name and real-time VRAM usage.\n\n"
+            "**Display Language**\n\n"
+            "Switch the UI language between Japanese, English, and Chinese.\n"
+            "Click \"Apply & Restart\" to relaunch the app in the selected language."
         ),
     },
     "zh": {
@@ -597,24 +610,34 @@ _STRINGS: dict[str, dict[str, str]] = {
             "语料库准备、音频批量生成、重采样等繁琐工作，一个工具全部搞定。"
         ),
         "manual_voice_design": (
-            "### Voice Design 标签 — 创建声音\n\n"
+            "### 声音设计 标签 — 创建声音\n\n"
             "1. 在**声音提示词**中描述想要的声音特征\n"
-            "   - 支持任何语言，推荐使用英文或中文\n"
-            "   - 可使用翻译按钮转换为中文/英文\n"
-            "   - 也可从预设中选择\n"
+            "   - 支持日语、英语、中文输入\n"
+            "   - 可使用翻译按钮在日语／中文／英语之间相互转换\n"
+            "   - 预设提供日语、中文、英语三种版本\n"
             "2. **生成参数**保持默认即可，也可根据喜好调整\n"
             "3. 在**示例文本**中输入预览用的文章\n"
             "4. **生成** → 预览播放 → 不满意则**重新生成**\n"
-            "5. 满意后填写**保存名称**并**保存**"
+            "5. 满意后填写**保存名称**并**保存**\n"
+            "   - 保存在 `output/voice_design/` 下，格式为 `{名称}.wav` + `{名称}.txt`\n"
+            "   - 若同名已存在，自动添加 `_1`, `_2`...\n"
+            "   - 保存的声音可在声音克隆标签的快捷方式中选择"
         ),
         "manual_voice_clone": (
-            "### Voice Clone 标签 — 批量生产音频\n\n"
+            "### 声音克隆 标签 — 批量生产音频\n\n"
             "1. 选择**参考音频**\n"
-            "2. 选择**语料库**（根据Settings中的语言设置切换JP/EN/ZH语料库）\n"
-            "3. 选择**语言**（JP/EN/ZH）— 传递给模型的语言指示\n"
+            "   - 快捷方式：按编号选择声音设计中保存的声音（转写自动填入）\n"
+            "   - 上传：使用自有音频（需手动输入转写文本）\n"
+            "2. 选择**语料库语言**（JA / EN / ZH）\n"
+            "   - 切换语料库文件夹，同时同步模型的语言指示\n"
+            "3. 选择**语料库文件**\n"
+            "   - ita_emotion100（100句）、ita_recitation324（324句）、mana652（652句）、rohan4600（4600句）\n"
+            "   - 上传：也可使用自制的每行一句 .txt 文件\n"
+            "   - 可设置使用句数（0=全部）\n"
             "4. 选择**模型**和**采样率**\n"
             "5. 设置**输出文件夹**名称\n"
-            "6. 点击**开始批量生成**"
+            "6. 点击**开始批量生成**\n\n"
+            "> 可使用**■ 停止**按钮中途暂停。"
         ),
         "manual_tools": (
             "### Tools 标签 — 后处理\n\n"
@@ -636,14 +659,20 @@ _STRINGS: dict[str, dict[str, str]] = {
             "| 1.7B-Base | ~7-8 GB |\n"
             "| 0.6B-Base | ~3-4 GB |"
         ),
-        "manual_backend": (
-            "### 推理后端（Settings标签）\n\n"
-            "可在Settings标签中切换后端和显示语言。\n\n"
+        "manual_backend": "",
+        "manual_settings": (
+            "### 设置 标签\n\n"
+            "**推理后端**\n\n"
             "| 后端 | 速度 | 支持模型 | 备注 |\n"
             "|---|---|---|---|\n"
             "| **faster** | ~6-10倍速 | 1.7B-VoiceDesign / 1.7B-Base | 需要GPU |\n"
             "| **standard** | 标准速度 | 全部 | CPU/GPU均可 |\n\n"
-            "**0.6B-Base 不支持faster**，会自动使用standard。"
+            "**0.6B-Base 不支持faster**，会自动回退到standard。\n\n"
+            "**GPU信息**\n\n"
+            "可实时查看当前使用的GPU名称和显存占用情况。\n\n"
+            "**显示语言**\n\n"
+            "可在日语、英语、中文之间切换UI显示语言。\n"
+            "点击「Apply & Restart」重启应用，以所选语言显示。"
         ),
     },
 }
