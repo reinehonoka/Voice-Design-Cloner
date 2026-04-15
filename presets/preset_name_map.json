@@ -1,13 +1,13 @@
 [
-  {"ja": "ダウナー系女子",    "en": "Calm Girl",        "zh": "慵懒系女孩"},
-  {"ja": "元気系女子",        "en": "Energetic Girl",   "zh": "元气系女孩"},
-  {"ja": "お姉さん系",        "en": "Mature Lady",      "zh": "大姐姐系"},
-  {"ja": "ダンディ系",        "en": "Dandy Man",        "zh": "绅士系男性"},
-  {"ja": "クール系男子",      "en": "Cool Guy",         "zh": "酷帅系男孩"},
-  {"ja": "少年系",            "en": "Young Boy",        "zh": "少年系"},
-  {"ja": "少女系",            "en": "Young Girl",       "zh": "少女系"},
-  {"ja": "ロリ系",            "en": "Cute Child Girl",  "zh": "萝莉系"},
-  {"ja": "ショタ系",          "en": "Cute Child Boy",   "zh": "正太系"},
-  {"ja": "ナレーション（男）","en": "Narrator (Male)",  "zh": "旁白（男）"},
-  {"ja": "ナレーション（女）","en": "Narrator (Female)", "zh": "旁白（女）"}
+  {"ja": "ダウナー系女子",    "en": "Calm Girl",           "zh": "慵懒系女孩",   "ko": "차분한 여성"},
+  {"ja": "元気系女子",        "en": "Energetic Girl",      "zh": "元气系女孩",   "ko": "활발한 여성"},
+  {"ja": "お姉さん系",        "en": "Mature Lady",         "zh": "大姐姐系",     "ko": "성숙한 여성"},
+  {"ja": "ダンディ系",        "en": "Dandy Man",           "zh": "绅士系男性",   "ko": "댄디한 남성"},
+  {"ja": "クール系男子",      "en": "Cool Guy",            "zh": "酷帅系男孩",   "ko": "쿨한 남성"},
+  {"ja": "少年系",            "en": "Young Boy",           "zh": "少年系",       "ko": "소년 감성"},
+  {"ja": "少女系",            "en": "Young Girl",          "zh": "少女系",       "ko": "소녀 감성"},
+  {"ja": "ロリ系",            "en": "Cute Child Girl",     "zh": "萝莉系",       "ko": "귀여운 어린 여자"},
+  {"ja": "ショタ系",          "en": "Cute Child Boy",      "zh": "正太系",       "ko": "귀여운 어린 남자"},
+  {"ja": "ナレーション（男）","en": "Narrator (Male)",     "zh": "旁白（男）",   "ko": "내레이션 (남성)"},
+  {"ja": "ナレーション（女）","en": "Narrator (Female)",   "zh": "旁白（女）",   "ko": "내레이션 (여성)"}
 ]

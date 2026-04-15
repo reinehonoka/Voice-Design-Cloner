@@ -1,6 +1,6 @@
 """Internationalization strings for VoiceDesignCloner.
 
-Supported languages: ja (Japanese), en (English), zh (Chinese)
+Supported languages: ja (Japanese), en (English), zh (Chinese), ko (Korean)
 """
 
 _STRINGS: dict[str, dict[str, str]] = {
@@ -35,6 +35,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "vd_sample_section": "### 3. 読み上げテキスト",
         "vd_sample_desc": "この声で読み上げる文章",
         "vd_sample_label": "読み上げテキスト",
+        "vd_tts_lang_label": "音声生成言語",
         "vd_preview_section": "### 4. プレビュー",
         "vd_preview_label": "プレビュー",
         "vd_status_label": "ステータス",
@@ -136,7 +137,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "tools_audio_unreadable": "  {}: 読み取れません",
         # ── Settings tab ──
         "settings_lang_section": "### 表示言語",
-        "settings_lang_label": "言語 / Language / 语言",
+        "settings_lang_label": "言語 / Language / 语言 / 언어",
         "settings_lang_note": "変更後はアプリを再起動してください。",
         "settings_lang_saved": "言語を {} に設定しました。再起動すると反映されます。",
         "settings_lang_save_fail": "エラー: {}",
@@ -170,6 +171,8 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - 「プリセットから選ぶ」に日本語・中国語・英語のサンプルがあります\n"
             "2. **生成パラメータ** はデフォルトのままでもOK、好みに合わせて調整も可能\n"
             "3. **読み上げテキスト** にプレビュー用の文章を入力\n"
+            "   - **音声生成言語** で読み上げる言語を選択（10言語対応）\n"
+            "   - デフォルトは設定タブで選択中のUI言語\n"
             "4. **生成** → プレビュー再生 → 気に入らなければ **再生成**\n"
             "5. 気に入ったら **保存名** を付けて **保存**\n"
             "   - `output/voice_design/` に `{保存名}.wav` と `{保存名}.txt` がセットで保存されます\n"
@@ -182,13 +185,17 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - ショートカット: ボイスデザインで保存した声を番号で選択（書き起こしは自動入力）\n"
             "   - アップロード: 自前の音声を使う場合（その声の書き起こしを手動入力）\n"
             "2. **コーパス言語** を選ぶ（JA / EN / ZH）\n"
-            "   - 選択した言語のコーパスフォルダに切り替わり、モデルへの言語指示も連動します\n"
+            "   - 選択した言語のコーパスフォルダに切り替わります\n"
+            "   - 梱包コーパス（JA/EN/ZH）を使う場合はこちらで言語が自動連動します\n"
             "3. **コーパスファイル** を選ぶ\n"
             "   - ita_emotion100（100文）、ita_recitation324（324文）、mana652（652文）、rohan4600（4600文）\n"
             "   - アップロード: 自作の1行1文の .txt ファイルも使えます\n"
             "   - 「使用する文数」で先頭N文だけ生成可（0=すべて）\n"
-            "4. **モデル** と **サンプルレート** を選択\n"
-            "   - SBV2 で使うことを想定してデフォルトは 44100Hz\n"
+            "4. **モデル**・**音声生成言語**・**サンプルレート** を選択\n"
+            "   - **音声生成言語** はテキストの言語を10言語から指定（梱包コーパス使用時は自動連動）\n"
+            "   - 自前コーパスを持ち込む場合は必ずこちらで言語を指定してください\n"
+            "   - デフォルトは設定タブで選択中のUI言語\n"
+            "   - SBV2 で使うことを想定してサンプルレートのデフォルトは 44100Hz\n"
             "5. **出力先** のフォルダ名を設定\n"
             "6. **一括生成開始**\n\n"
             "> **■ 停止** ボタンで途中停止できます。"
@@ -224,7 +231,7 @@ _STRINGS: dict[str, dict[str, str]] = {
             "**GPU 情報**\n\n"
             "現在使用中の GPU 名と VRAM 使用量をリアルタイムで確認できます。\n\n"
             "**表示言語**\n\n"
-            "UI の表示言語を日本語 / 英語 / 中国語から選択できます。\n"
+            "UI の表示言語を日本語 / 英語 / 中国語 / 韓国語から選択できます。\n"
             "「Apply & Restart」ボタンを押すとアプリが再起動し、選択した言語で表示されます。"
         ),
     },
@@ -259,6 +266,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "vd_sample_section": "### 3. Sample Text",
         "vd_sample_desc": "Text to be spoken in this voice",
         "vd_sample_label": "Sample Text",
+        "vd_tts_lang_label": "Generation Language",
         "vd_preview_section": "### 4. Preview",
         "vd_preview_label": "Preview",
         "vd_status_label": "Status",
@@ -360,7 +368,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "tools_audio_unreadable": "  {}: unreadable",
         # ── Settings tab ──
         "settings_lang_section": "### Display Language",
-        "settings_lang_label": "言語 / Language / 语言",
+        "settings_lang_label": "言語 / Language / 语言 / 언어",
         "settings_lang_note": "Restart the app to apply changes.",
         "settings_lang_saved": "Language set to {}. Restart to apply.",
         "settings_lang_save_fail": "Error: {}",
@@ -394,6 +402,8 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - Presets are available in Japanese, Chinese, and English\n"
             "2. **Generation Parameters** can be left at defaults\n"
             "3. Enter preview text in **Sample Text**\n"
+            "   - **Generation Language**: select the language to speak (10 languages supported)\n"
+            "   - Defaults to the UI language selected in Settings\n"
             "4. **Generate** → Preview → **Re-roll** if unsatisfied\n"
             "5. Enter a **Save Name** and click **Save**\n"
             "   - Saved as `{name}.wav` + `{name}.txt` under `output/voice_design/`\n"
@@ -406,12 +416,16 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - Shortcut: select by number from saved Voice Design voices (transcript auto-filled)\n"
             "   - Upload: use your own audio (enter transcript manually)\n"
             "2. Select **Corpus Language** (JA / EN / ZH)\n"
-            "   - Switches the corpus folder and language instruction sent to the model\n"
+            "   - Switches the corpus folder for the bundled corpus\n"
+            "   - Language is auto-linked when using bundled corpora (JA/EN/ZH)\n"
             "3. Choose a **Corpus File**\n"
             "   - ita_emotion100 (100), ita_recitation324 (324), mana652 (652), rohan4600 (4600)\n"
             "   - Upload: use a custom one-sentence-per-line .txt file\n"
             "   - Set sentences to use (0 = all)\n"
-            "4. Choose **Model** and **Sample Rate**\n"
+            "4. Choose **Model**, **Generation Language**, and **Sample Rate**\n"
+            "   - **Generation Language**: specify the language of the text (10 languages supported)\n"
+            "   - Required when bringing your own corpus — set this to match your text\n"
+            "   - Defaults to the UI language selected in Settings\n"
             "5. Set **Output Folder** name\n"
             "6. Click **Start Batch Generation**\n\n"
             "> Use **■ Stop** to halt mid-generation."
@@ -448,7 +462,7 @@ _STRINGS: dict[str, dict[str, str]] = {
             "**GPU Info**\n\n"
             "Displays the current GPU name and real-time VRAM usage.\n\n"
             "**Display Language**\n\n"
-            "Switch the UI language between Japanese, English, and Chinese.\n"
+            "Switch the UI language between Japanese, English, Chinese, and Korean.\n"
             "Click \"Apply & Restart\" to relaunch the app in the selected language."
         ),
     },
@@ -483,6 +497,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "vd_sample_section": "### 3. 示例文本",
         "vd_sample_desc": "用该声音朗读的文章",
         "vd_sample_label": "示例文本",
+        "vd_tts_lang_label": "音频生成语言",
         "vd_preview_section": "### 4. 预览",
         "vd_preview_label": "预览",
         "vd_status_label": "状态",
@@ -584,7 +599,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "tools_audio_unreadable": "  {}: 无法读取",
         # ── Settings tab ──
         "settings_lang_section": "### 显示语言",
-        "settings_lang_label": "言語 / Language / 语言",
+        "settings_lang_label": "言語 / Language / 语言 / 언어",
         "settings_lang_note": "更改后请重启应用。",
         "settings_lang_saved": "语言已设置为 {}。重启后生效。",
         "settings_lang_save_fail": "错误: {}",
@@ -617,6 +632,8 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - 预设提供日语、中文、英语三种版本\n"
             "2. **生成参数**保持默认即可，也可根据喜好调整\n"
             "3. 在**示例文本**中输入预览用的文章\n"
+            "   - **音频生成语言**：选择朗读所用的语言（支持10种语言）\n"
+            "   - 默认为设置标签中选择的UI语言\n"
             "4. **生成** → 预览播放 → 不满意则**重新生成**\n"
             "5. 满意后填写**保存名称**并**保存**\n"
             "   - 保存在 `output/voice_design/` 下，格式为 `{名称}.wav` + `{名称}.txt`\n"
@@ -629,12 +646,16 @@ _STRINGS: dict[str, dict[str, str]] = {
             "   - 快捷方式：按编号选择声音设计中保存的声音（转写自动填入）\n"
             "   - 上传：使用自有音频（需手动输入转写文本）\n"
             "2. 选择**语料库语言**（JA / EN / ZH）\n"
-            "   - 切换语料库文件夹，同时同步模型的语言指示\n"
+            "   - 切换语料库文件夹\n"
+            "   - 使用内置语料库（JA/EN/ZH）时，语言会自动联动\n"
             "3. 选择**语料库文件**\n"
             "   - ita_emotion100（100句）、ita_recitation324（324句）、mana652（652句）、rohan4600（4600句）\n"
             "   - 上传：也可使用自制的每行一句 .txt 文件\n"
             "   - 可设置使用句数（0=全部）\n"
-            "4. 选择**模型**和**采样率**\n"
+            "4. 选择**模型**、**音频生成语言**和**采样率**\n"
+            "   - **音频生成语言**：指定文本所用语言（支持10种语言）\n"
+            "   - 自带语料库时使用时语言自动联动；使用自有语料库时请手动指定\n"
+            "   - 默认为设置标签中选择的UI语言\n"
             "5. 设置**输出文件夹**名称\n"
             "6. 点击**开始批量生成**\n\n"
             "> 可使用**■ 停止**按钮中途暂停。"
@@ -671,8 +692,239 @@ _STRINGS: dict[str, dict[str, str]] = {
             "**GPU信息**\n\n"
             "可实时查看当前使用的GPU名称和显存占用情况。\n\n"
             "**显示语言**\n\n"
-            "可在日语、英语、中文之间切换UI显示语言。\n"
+            "可在日语、英语、中文、韩语之间切换UI显示语言。\n"
             "点击「Apply & Restart」重启应用，以所选语言显示。"
+        ),
+    },
+    "ko": {
+        # ── App ──
+        "app_title": "VoiceDesignCloner",
+        # ── Tab names ──
+        "tab_voice_design": "보이스 디자인",
+        "tab_voice_clone": "보이스 클론",
+        "tab_tools": "도구",
+        "tab_settings": "설정",
+        "tab_manual": "매뉴얼",
+        # ── Voice Design tab ──
+        "vd_prompt_section": "### 1. 보이스 프롬프트",
+        "vd_prompt_desc": "생성하고 싶은 목소리의 특징을 설명하세요 (어떤 언어도 가능)",
+        "vd_prompt_label": "LLM 프롬프트",
+        "vd_prompt_placeholder": "예: 차분한 성인 여성의 목소리, 낮은 톤",
+        "vd_btn_translate_ja": "일본어로 번역",
+        "vd_btn_translate_zh": "중국어로 번역",
+        "vd_btn_translate_en": "영어로 번역",
+        "vd_preset_accordion": "프리셋에서 선택",
+        "vd_preset_ja_label": "일본어",
+        "vd_preset_zh_label": "중국어",
+        "vd_preset_en_label": "영어",
+        "vd_btn_clear_preset": "지우기",
+        "vd_params_section": "### 2. 생성 파라미터",
+        "vd_temperature_label": "Temperature (높음=표현력 / 낮음=안정)",
+        "vd_top_p_label": "Top-P (낮을수록 품질 안정)",
+        "vd_top_k_label": "Top-K (후보 토큰 수)",
+        "vd_rep_penalty_label": "반복 패널티",
+        "vd_btn_reset_params": "기본값으로 초기화",
+        "vd_sample_section": "### 3. 샘플 텍스트",
+        "vd_sample_desc": "이 목소리로 읽을 문장",
+        "vd_sample_label": "샘플 텍스트",
+        "vd_tts_lang_label": "음성 생성 언어",
+        "vd_preview_section": "### 4. 미리 듣기",
+        "vd_preview_label": "미리 듣기",
+        "vd_status_label": "상태",
+        "vd_btn_generate": "생성",
+        "vd_btn_reroll": "재생성",
+        "vd_save_section": "### 5. 저장",
+        "vd_save_name_label": "저장 이름",
+        "vd_btn_save": "저장",
+        # vd messages
+        "vd_err_empty_prompt": "보이스 지시가 비어 있습니다",
+        "vd_err_translate_empty": "텍스트를 입력해 주세요",
+        "vd_err_translate_fail": "번역 오류: {}",
+        "vd_err_generate_fail": "오류: {}",
+        "vd_ok_generated": "생성 완료 ({}Hz)",
+        "vd_err_no_audio": "저장할 오디오가 없습니다",
+        "vd_ok_saved": "저장 완료: {}",
+        "vd_err_save_fail": "오류: {}",
+        # ── Voice Clone tab ──
+        "vc_ref_section": "### 1. 참조 음성",
+        "vc_ref_tab_shortcut": "바로가기",
+        "vc_ref_tab_upload": "업로드",
+        "vc_shortcut_label": "voice_design 번호",
+        "vc_upload_audio_label": "오디오 파일",
+        "vc_ref_text_label": "참조 음성 전사",
+        "vc_ref_text_placeholder": "바로가기는 자동 입력",
+        "vc_btn_refresh_ref": "목록 새로고침",
+        "vc_corpus_section": "### 2. 코퍼스",
+        "vc_corpus_tab_file": "파일 선택",
+        "vc_corpus_tab_upload": "업로드",
+        "vc_corpus_file_label": "코퍼스 파일",
+        "vc_corpus_lang_label": "코퍼스 언어",
+        "vc_corpus_upload_label": "텍스트 파일 (한 줄에 한 문장 .txt)",
+        "vc_corpus_count_label": "사용할 문장 수 (0=전체)",
+        "vc_corpus_total_lines_label": "총 문장 수",
+        "vc_corpus_total_chars_label": "총 문자 수",
+        "vc_btn_corpus_refresh": "코퍼스 정보 새로고침",
+        "vc_settings_section": "### 3. 설정",
+        "vc_model_label": "모델",
+        "vc_lang_label": "언어",
+        "vc_sr_label": "출력 샘플레이트 (Hz)",
+        "vc_output_section": "### 출력 경로 (output/)",
+        "vc_output_folder_label": "폴더 이름",
+        "vc_wavs_folder_label": "오디오 하위 폴더 이름",
+        "vc_esd_filename_label": "텍스트 목록 이름 (.txt 자동 추가)",
+        "vc_btn_start": "일괄 생성 시작",
+        "vc_btn_stop": "■ 정지",
+        "vc_progress_section": "### 4. 진행 상황",
+        "vc_progress_label": "상태",
+        "vc_result_label": "결과",
+        # vc messages
+        "vc_err_no_ref": "오류: 참조 음성이 없습니다",
+        "vc_err_ref_not_found": "오류: 참조 음성을 찾을 수 없습니다",
+        "vc_err_empty_ref_text": "오류: 전사 텍스트가 비어 있습니다",
+        "vc_err_no_text": "오류: 텍스트가 없습니다",
+        "vc_err_text_load_fail": "오류: 텍스트 로드 실패 ({})",
+        "vc_err_upload_path": "업로드된 파일 경로를 확인할 수 없습니다",
+        "vc_ok_done": "완료!",
+        "vc_result_files": "파일 수: {}\n총 재생 시간: {}\n출력 경로: {}\n텍스트 목록: {}",
+        "vc_err_file_select": "파일 선택",
+        "vc_err_file_load": "오류: {}",
+        "vc_stopped": "정지했습니다",
+        "vc_clone_fail": "오류: {}",
+        # ── Tools tab ──
+        "tools_resample_section": "### 리샘플",
+        "tools_resample_desc": "output 폴더의 raw/ 내 WAV 파일을 일괄 리샘플하여 resampled/ 에 출력합니다.",
+        "tools_resample_folder_label": "폴더 선택",
+        "tools_resample_sr_label": "출력 샘플레이트 (Hz)",
+        "tools_btn_resample": "리샘플 실행",
+        "tools_resample_status_label": "상태",
+        "tools_btn_resample_refresh": "새로고침",
+        "tools_esd_section": "### esd.list 생성",
+        "tools_esd_desc": "output 폴더를 선택하여 raw/*.wav 와 텍스트 목록에서 esd.list 를 생성합니다.",
+        "tools_esd_folder_label": "폴더 선택",
+        "tools_esd_speaker_label": "화자 이름 (speaker 열)",
+        "tools_esd_lang_label": "언어 코드 (lang 열)",
+        "tools_btn_esd": "esd.list 생성",
+        "tools_esd_status_label": "상태",
+        "tools_btn_esd_refresh": "새로고침",
+        "tools_audio_info_section": "### 오디오 정보",
+        "tools_audio_info_desc": "WAV 파일을 업로드하여 재생 시간 및 샘플레이트를 확인합니다.",
+        "tools_audio_files_label": "WAV 파일 (복수 가능)",
+        "tools_audio_info_label": "파일 정보",
+        # tools messages
+        "tools_err_no_folder": "오류: 폴더를 선택해 주세요",
+        "tools_err_raw_not_found": "오류: {} 를 찾을 수 없습니다",
+        "tools_err_no_wavs": "오류: raw/ 에 WAV 파일이 없습니다",
+        "tools_err_folder_not_exist": "오류: {} 가 존재하지 않습니다",
+        "tools_err_no_text": "오류: 텍스트를 찾을 수 없습니다. Neutral.txt 등이 필요합니다",
+        "tools_resample_done": "완료: {}개 파일 리샘플 ({:.1f}초)\n출력 경로: {}",
+        "tools_esd_done": "완료: {}줄의 esd.list 생성\n저장 경로: {}",
+        "tools_esd_skip": "\n⚠ 텍스트 없음으로 건너뜀 ({}개): {}",
+        "tools_audio_files": "파일 수: {} / 합계: {:.1f}초 ({:.1f}분)",
+        "tools_audio_all_match": "\n전체 일치: {}Hz / {} / {}",
+        "tools_audio_sr_mismatch": "\n⚠ 샘플레이트 불일치: {}",
+        "tools_audio_ch_mismatch": "\n⚠ 채널 수 불일치: {}",
+        "tools_audio_bit_mismatch": "\n⚠ 비트 깊이 불일치: {}",
+        "tools_audio_mono": "모노",
+        "tools_audio_multi_ch": "{}ch",
+        "tools_audio_unreadable": "  {}: 읽을 수 없음",
+        # ── Settings tab ──
+        "settings_lang_section": "### 표시 언어",
+        "settings_lang_label": "言語 / Language / 语言 / 언어",
+        "settings_lang_note": "변경 후 앱을 재시작해 주세요.",
+        "settings_lang_saved": "언어를 {} 로 설정했습니다. 재시작하면 적용됩니다.",
+        "settings_lang_save_fail": "오류: {}",
+        "settings_backend_section": "### 추론 백엔드",
+        "settings_backend_desc": "**faster**: CUDA Graph 가속 (6-10배 속도, GPU 전용)\n\n**standard**: 표준 추론 (CPU/GPU 모두 지원)",
+        "settings_backend_label": "백엔드",
+        "settings_backend_status_label": "상태",
+        "settings_backend_current": "현재: {}",
+        "settings_backend_no_faster": " (faster 미설치)",
+        "settings_backend_err": "오류: {}",
+        "settings_sysinfo_section": "### 시스템 정보",
+        "settings_gpu_label": "GPU",
+        "settings_vram_label": "VRAM",
+        "settings_faster_label": "faster-qwen3-tts",
+        "settings_faster_installed": "설치됨",
+        "settings_faster_not_installed": "미설치 (pip install faster-qwen3-tts)",
+        "settings_btn_refresh": "새로고침",
+        # ── Manual tab ──
+        "manual_intro": (
+            "## VoiceDesignCloner 란?\n\n"
+            "**녹음 없이** 텍스트 프롬프트로 오리지널 목소리를 만들고, "
+            "코퍼스를 이용해 그 목소리로 대량의 음성을 자동 생성하는 GUI 도구입니다.\n"
+            "출력은 Style-Bert-VITS2 (SBV2) 등의 TTS 모델 학습에 바로 사용할 수 있는 교사 데이터 형식입니다.\n\n"
+            "코퍼스 준비, 음성 양산, 리샘플 등의 번거로운 작업을 이 하나로 완결할 수 있습니다."
+        ),
+        "manual_voice_design": (
+            "### 보이스 디자인 탭 — 목소리 만들기\n\n"
+            "1. **보이스 프롬프트**에 만들고 싶은 목소리의 특징을 입력\n"
+            "   - 한국어, 일본어, 영어, 중국어로 입력 가능합니다\n"
+            "   - 번역 버튼으로 일본어/중국어/영어로 상호 변환 가능\n"
+            "   - '프리셋에서 선택'에 일본어/중국어/영어 샘플이 있습니다\n"
+            "2. **생성 파라미터**는 기본값 그대로도 OK, 취향에 맞게 조정 가능\n"
+            "3. **샘플 텍스트**에 미리 듣기용 문장을 입력\n"
+            "   - **음성 생성 언어**: 읽어줄 언어를 선택 (10개 언어 지원)\n"
+            "   - 기본값은 설정 탭에서 선택한 UI 언어\n"
+            "4. **생성** → 미리 듣기 → 마음에 들지 않으면 **재생성**\n"
+            "5. 마음에 들면 **저장 이름**을 입력하고 **저장**\n"
+            "   - `output/voice_design/` 에 `{저장명}.wav` + `{저장명}.txt` 세트로 저장됩니다\n"
+            "   - 동일한 이름이 있으면 `_1`, `_2`... 가 자동으로 붙습니다\n"
+            "   - 보이스 클론의 '바로가기'는 저장된 음성을 대상으로 합니다"
+        ),
+        "manual_voice_clone": (
+            "### 보이스 클론 탭 — 목소리 양산하기\n\n"
+            "1. **참조 음성**을 선택\n"
+            "   - 바로가기: 보이스 디자인에서 저장한 목소리를 번호로 선택 (전사 자동 입력)\n"
+            "   - 업로드: 직접 가진 음성 파일을 사용 (전사를 수동 입력)\n"
+            "2. **코퍼스 언어**를 선택 (JA / EN / ZH)\n"
+            "   - 해당 언어의 코퍼스 폴더로 전환됩니다\n"
+            "   - 내장 코퍼스 (JA/EN/ZH) 사용 시 언어가 자동 연동됩니다\n"
+            "3. **코퍼스 파일**을 선택\n"
+            "   - ita_emotion100 (100문), ita_recitation324 (324문), mana652 (652문), rohan4600 (4600문)\n"
+            "   - 업로드: 직접 만든 한 줄에 한 문장 .txt 파일도 사용 가능\n"
+            "   - '사용할 문장 수'로 앞에서 N문만 생성 가능 (0=전체)\n"
+            "4. **모델**·**음성 생성 언어**·**샘플레이트**를 선택\n"
+            "   - **음성 생성 언어**: 텍스트 언어를 10개 언어에서 지정\n"
+            "   - 직접 준비한 코퍼스를 사용할 때는 반드시 언어를 지정해 주세요\n"
+            "   - 기본값은 설정 탭에서 선택한 UI 언어\n"
+            "5. **출력 폴더** 이름을 설정\n"
+            "6. **일괄 생성 시작**\n\n"
+            "> **■ 정지** 버튼으로 도중에 중단할 수 있습니다."
+        ),
+        "manual_tools": (
+            "### 도구 탭 — 후처리\n\n"
+            "- **리샘플**: 폴더의 `raw/` 내 WAV를 일괄 변환 → `resampled/` 에 출력\n"
+            "- **esd.list 생성**: `raw/` 의 WAV와 `Neutral.txt` 에서 SBV2용 목록 생성 (언어 코드 선택 가능)\n"
+            "- **오디오 정보**: WAV 파일의 재생 시간·샘플레이트를 확인"
+        ),
+        "manual_sbv2": (
+            "### Style-Bert-VITS2 에 전달하기\n\n"
+            "1. `output/{폴더명}/raw/` → SBV2 의 `Data/{모델명}/raw/` 에 복사\n"
+            "2. 도구 탭에서 esd.list 생성 → `Data/{모델명}/esd.list` 로 배치\n"
+            "3. SBV2 의 WebUI에서 전처리 → 학습 실행"
+        ),
+        "manual_vram": (
+            "### VRAM 참고\n\n"
+            "| 모델 | VRAM (bf16) |\n"
+            "|---|---|\n"
+            "| 1.7B-VoiceDesign | ~7-8 GB |\n"
+            "| 1.7B-Base | ~7-8 GB |\n"
+            "| 0.6B-Base | ~3-4 GB |"
+        ),
+        "manual_backend": "",
+        "manual_settings": (
+            "### 설정 탭\n\n"
+            "**추론 백엔드**\n\n"
+            "| 백엔드 | 속도 | 지원 모델 | 비고 |\n"
+            "|---|---|---|---|\n"
+            "| **faster** | ~6-10배 속도 (RTF ~2.0) | 1.7B-VoiceDesign / 1.7B-Base | GPU 필수 |\n"
+            "| **standard** | 표준 속도 | 전체 | CPU/GPU 모두 지원 |\n\n"
+            "**0.6B-Base 는 faster 미지원**입니다.\n\n"
+            "**GPU 정보**\n\n"
+            "현재 사용 중인 GPU 이름과 VRAM 사용량을 실시간으로 확인할 수 있습니다.\n\n"
+            "**표시 언어**\n\n"
+            "UI 표시 언어를 일본어 / 영어 / 중국어 / 한국어에서 선택할 수 있습니다.\n"
+            "「Apply & Restart」버튼을 누르면 앱이 재시작되어 선택한 언어로 표시됩니다."
         ),
     },
 }
@@ -682,6 +934,7 @@ LANG_OPTIONS = {
     "ja": "日本語",
     "en": "English",
     "zh": "中文",
+    "ko": "한국어",
 }
 
 # Maps UI language code to Qwen3-TTS language name
@@ -689,6 +942,7 @@ QWEN_LANG_MAP = {
     "JP": "Japanese",
     "EN": "English",
     "ZH": "Chinese",
+    "KO": "Korean",
 }
 
 # Maps app language to default corpus language folder
@@ -696,6 +950,7 @@ CORPUS_LANG_FOLDER = {
     "ja": "japanese",
     "en": "english",
     "zh": "chinese",
+    "ko": "korean",
 }
 
 # Maps app language to esd.list language code
@@ -703,6 +958,7 @@ APP_TO_ESD_LANG = {
     "ja": "JP",
     "en": "EN",
     "zh": "ZH",
+    "ko": "KO",
 }
 
 # Default sample text per language
@@ -710,6 +966,7 @@ DEFAULT_SAMPLE_TEXTS = {
     "ja": "こんにちは、はじめまして。私の声はいかがですか？",
     "en": "Hello, nice to meet you. How do you like my voice?",
     "zh": "你好，很高兴认识你。你觉得我的声音怎么样？",
+    "ko": "안녕하세요, 처음 뵙겠습니다. 제 목소리는 어떠세요?",
 }
 
 

@@ -6,6 +6,12 @@ from pathlib import Path
 import soundfile as sf
 from config import VOICE_DESIGN_DIR, TTS_LANG
 
+TTS_LANGUAGES = [
+    "japanese", "english", "chinese", "korean",
+    "german", "french", "spanish", "italian",
+    "portuguese", "russian",
+]
+
 
 _SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9_.-]+")
 
@@ -18,12 +24,12 @@ def _sanitize_filename(name: str, default: str = "voice_design") -> str:
     return candidate or default
 
 
-def generate_voice_design(manager, text: str, instruct: str, **kwargs):
+def generate_voice_design(manager, text: str, instruct: str, language: str | None = None, **kwargs):
     """Generate a voice with VoiceDesign model. Returns (sample_rate, audio_array)."""
     manager.load_model("1.7B-VoiceDesign")
     wavs, sr = manager.current_model.generate_voice_design(
         text=text,
-        language=TTS_LANG,
+        language=language or TTS_LANG,
         instruct=instruct,
         **kwargs,
     )

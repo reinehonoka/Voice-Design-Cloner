@@ -2,10 +2,10 @@
 
 import logging
 import gradio as gr
-from modules.voice_design import generate_voice_design, save_voice
+from modules.voice_design import generate_voice_design, save_voice, TTS_LANGUAGES
 from modules.translator import Translator
 from modules.utils import load_presets_localized
-from config import DEFAULT_SAMPLE_TEXT
+from config import DEFAULT_SAMPLE_TEXT, TTS_LANG
 from lang import t
 
 translator = Translator()
@@ -96,6 +96,11 @@ def build_voice_design_tab(manager):
                     value=DEFAULT_SAMPLE_TEXT,
                     lines=2,
                 )
+                tts_lang_dropdown = gr.Dropdown(
+                    choices=TTS_LANGUAGES,
+                    value=TTS_LANG,
+                    label=t("vd_tts_lang_label"),
+                )
 
             gr.HTML("<div style='height: 12px'></div>")
 
@@ -168,12 +173,12 @@ def build_voice_design_tab(manager):
     clear_preset_btn.click(fn=lambda: (None, None, None, ""), outputs=[preset_ja, preset_zh, preset_en, instruct_text])
 
     # ── Generate ──
-    def on_generate(instruct, sample, temp, tp, tk, rp):
+    def on_generate(instruct, sample, lang, temp, tp, tk, rp):
         if not instruct.strip():
             return None, None, t("vd_err_empty_prompt")
         try:
             sr, audio = generate_voice_design(
-                manager, sample, instruct,
+                manager, sample, instruct, language=lang,
                 temperature=temp, top_p=tp, top_k=int(tk), repetition_penalty=rp,
             )
             return (sr, audio), (sr, audio), t("vd_ok_generated").format(sr)
@@ -181,7 +186,7 @@ def build_voice_design_tab(manager):
             logger.exception("Voice design generation failed")
             return None, None, t("vd_err_generate_fail").format(e)
 
-    gen_inputs = [instruct_text, sample_text, temperature, top_p, top_k, rep_penalty]
+    gen_inputs = [instruct_text, sample_text, tts_lang_dropdown, temperature, top_p, top_k, rep_penalty]
     gen_outputs = [audio_preview, state_path, status]
 
     generate_btn.click(fn=on_generate, inputs=gen_inputs, outputs=gen_outputs)

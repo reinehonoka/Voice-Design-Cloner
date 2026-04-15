@@ -3,10 +3,10 @@
 import logging
 import gradio as gr
 from modules.voice_clone import batch_clone
-from modules.voice_design import list_kept_voice_numbers, get_kept_voice_path, get_kept_voice_text
+from modules.voice_design import list_kept_voice_numbers, get_kept_voice_path, get_kept_voice_text, TTS_LANGUAGES
 from modules.utils import list_corpus_files, load_corpus, format_duration
 from modules.model_manager import ModelManager
-from config import DEFAULT_TARGET_SR
+from config import DEFAULT_TARGET_SR, TTS_LANG
 from lang import t
 
 logger = logging.getLogger(__name__)
@@ -115,6 +115,11 @@ def build_voice_clone_tab(manager: ModelManager):
             with gr.Group():
                 model_choice = gr.Dropdown(
                     choices=ModelManager.CLONE_MODELS, value="1.7B-Base", label=t("vc_model_label"),
+                )
+                tts_lang_dropdown = gr.Dropdown(
+                    choices=TTS_LANGUAGES,
+                    value=TTS_LANG,
+                    label=t("vd_tts_lang_label"),
                 )
                 target_sr = gr.Dropdown(
                     choices=[44100, 48000, 24000, 22050], value=DEFAULT_TARGET_SR, label=t("vc_sr_label"),
@@ -273,7 +278,7 @@ def build_voice_clone_tab(manager: ModelManager):
     )
 
     # ── Clone ──
-    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, out_folder, wavs_name, esd_name, sr, resolved_path, corpus_lang, progress=gr.Progress()):
+    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, tts_lang, out_folder, wavs_name, esd_name, sr, resolved_path, corpus_lang, progress=gr.Progress()):
         if r_mode == t("vc_ref_tab_upload") and uploaded_audio:
             ref = _resolve_uploaded_path(uploaded_audio)
         elif resolved_path:
@@ -327,6 +332,7 @@ def build_voice_clone_tab(manager: ModelManager):
                 esd_filename=esd,
                 model_key=model, target_sr=int(sr),
                 corpus_lang=corpus_lang,
+                tts_language=tts_lang,
             ):
                 if isinstance(payload, dict):
                     stats = payload
@@ -352,7 +358,7 @@ def build_voice_clone_tab(manager: ModelManager):
         inputs=[
             ref_mode, shortcut_dropdown, upload_audio, ref_text,
             corpus_mode, corpus_dropdown, upload_file, corpus_count,
-            model_choice, output_folder, wavs_folder, esd_filename, target_sr, resolved_ref_path,
+            model_choice, tts_lang_dropdown, output_folder, wavs_folder, esd_filename, target_sr, resolved_ref_path,
             corpus_lang_state,
         ],
         outputs=[progress_text, result_text],

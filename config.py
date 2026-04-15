@@ -12,7 +12,7 @@ CORPUS_DIR = BASE_DIR / "corpus"
 
 # Language setting
 _CONFIG_JSON = BASE_DIR / "config.json"
-_SUPPORTED_LANGS = {"ja", "en", "zh"}
+_SUPPORTED_LANGS = {"ja", "en", "zh", "ko"}
 
 def _load_lang() -> str:
     try:
@@ -33,6 +33,7 @@ _TTS_LANG_MAP = {
     "ja": "japanese",
     "en": "english",
     "zh": "chinese",
+    "ko": "korean",
 }
 TTS_LANG: str = _TTS_LANG_MAP.get(LANG, "auto")
 
@@ -41,6 +42,7 @@ _SAMPLE_TEXTS = {
     "ja": "こんにちは、はじめまして。私の声はいかがですか？",
     "en": "Hello, nice to meet you. How do you like my voice?",
     "zh": "你好，很高兴认识你。你觉得我的声音怎么样？",
+    "ko": "안녕하세요, 처음 뵙겠습니다. 제 목소리는 어떠세요?",
 }
 DEFAULT_SAMPLE_TEXT = _SAMPLE_TEXTS.get(LANG, _SAMPLE_TEXTS["ja"])
 DEFAULT_TARGET_SR = 44100
