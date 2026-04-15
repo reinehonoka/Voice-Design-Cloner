@@ -7,16 +7,45 @@ echo "  VoiceDesignCloner - Setup"
 echo "============================================"
 echo ""
 
-# Check Python
-if ! python3 --version > /dev/null 2>&1; then
-    echo "[ERROR] Python not found. Please install Python 3.12."
-    exit 1
+# --- Python version selection ---
+PYTHON_CMD=""
+
+# Look for a compatible version (3.12 preferred, then 3.11, 3.10)
+for VER in 3.12 3.11 3.10; do
+    if python$VER --version > /dev/null 2>&1; then
+        PYTHON_CMD="python$VER"
+        echo "[INFO] Found compatible Python $VER."
+        break
+    fi
+done
+
+# No compatible version found -- try plain python3
+if [ -z "$PYTHON_CMD" ]; then
+    if ! python3 --version > /dev/null 2>&1; then
+        echo "[ERROR] Python not found. Please install Python 3.10-3.12."
+        echo "https://www.python.org/downloads/release/python-3120/"
+        exit 1
+    fi
+    PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)")
+    if [ "$PY_MINOR" -gt 12 ]; then
+        echo "[WARN] Python $PY_VER is not officially supported (recommended: 3.10-3.12)."
+        echo "[WARN] You may encounter errors during setup or at runtime."
+        echo ""
+        read -p "Continue anyway? (y/N): " CONT
+        if [ "$CONT" != "y" ] && [ "$CONT" != "Y" ]; then
+            echo "Aborted."
+            exit 1
+        fi
+    fi
+    PYTHON_CMD="python3"
+    echo "[INFO] Using python: $PY_VER"
 fi
 
 # Create venv
 if [ ! -d "venv" ]; then
     echo "[INFO] Creating virtual environment..."
-    python3 -m venv venv
+    $PYTHON_CMD -m venv venv
 else
     echo "[INFO] venv already exists. Skipping."
 fi

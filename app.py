@@ -62,7 +62,12 @@ def _asyncio_exception_handler(loop, context):
     loop.default_exception_handler(context)
 
 
-asyncio.get_event_loop().set_exception_handler(_asyncio_exception_handler)
+try:
+    loop = asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+loop.set_exception_handler(_asyncio_exception_handler)
 
 manager = ModelManager()
 logger.info("VoiceDesignCloner starting (backend=%s)", manager.backend)
