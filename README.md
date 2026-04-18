@@ -1,5 +1,7 @@
 # VoiceDesignCloner
 
+[English README](README.en.md)
+
 **録音不要でオリジナルなAI音声から完全なTTSモデルを作るための教師データ作成ツール。**
 
 音声合成で大変な**録音・コーパス構築・量産・リサンプル**の問題を解決。
