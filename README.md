@@ -138,12 +138,19 @@ pip install faster-qwen3-tts
 
 | ファイル | 文数 | 内容 |
 |---|---|---|
+| aica.txt | 500文 | AICAコーパス（AIキャラ用） |
 | ita_emotion100.txt | 100文 | ITAコーパス（感情表現） |
 | ita_recitation324.txt | 324文 | ITAコーパス（朗読） |
 | mana652.txt | 652文 | MANAコーパス |
 | rohan4600.txt | 4600文 | ROHANコーパス |
 
 日本語（JA）は原文そのままを収録。英語（EN）・中国語（ZH）は M2M-100 によるオフライン翻訳後、モデルのループ出力・未知語トークン（`<unk>`）をすべて手動で修正済みです。
+
+### AICAコーパスについて
+
+日本語のみAICAコーパスを追加いたしました。
+AIキャラ専用に別途作成した500文のコーパスです。
+[AICAコーパス](https://github.com/reinehonoka/aica-corpus)
 
 ---
 ## Style-Bert-VITS2 への受け渡し

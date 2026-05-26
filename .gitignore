@@ -21,6 +21,9 @@ build/
 # qwen3-tts を直下にcloneした場合
 qwen3-tts/
 
+# 外部エンジン（setup.bat / setup.sh が clone する）
+engines/
+
 # VSCode
 .vscode/
 

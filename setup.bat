@@ -124,6 +124,57 @@ if errorlevel 1 (
     pip install faster-qwen3-tts
 )
 
+REM ============================================
+REM   Irodori-TTS (optional, GPU only)
+REM ============================================
+echo.
+echo ============================================
+echo   Irodori-TTS Setup (optional)
+echo ============================================
+nvidia-smi >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] No NVIDIA GPU detected. Skipping Irodori-TTS (GPU required^).
+    goto :done
+)
+
+where git >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] git not found. Skipping Irodori-TTS.
+    echo [WARN] Install git from https://git-scm.com/ and re-run setup to enable Irodori.
+    goto :done
+)
+
+if not exist "engines" mkdir engines
+if not exist "engines\Irodori-TTS" (
+    echo [INFO] Cloning Irodori-TTS...
+    git clone https://github.com/Aratako/Irodori-TTS.git engines\Irodori-TTS
+    if errorlevel 1 (
+        echo [WARN] git clone failed. Skipping Irodori-TTS.
+        goto :done
+    )
+) else (
+    echo [INFO] engines\Irodori-TTS already exists. Skipping clone.
+)
+
+echo [INFO] Installing uv into main venv...
+pip install -U uv
+if errorlevel 1 (
+    echo [WARN] uv installation failed. Skipping Irodori-TTS.
+    goto :done
+)
+
+echo [INFO] Running uv sync --extra cu128 in engines\Irodori-TTS...
+pushd engines\Irodori-TTS
+uv sync --extra cu128
+set IRODORI_RC=%ERRORLEVEL%
+popd
+if not "%IRODORI_RC%"=="0" (
+    echo [WARN] uv sync failed (exit %IRODORI_RC%^). Irodori-TTS may not be usable.
+) else (
+    echo [INFO] Irodori-TTS setup complete.
+)
+
+:done
 echo.
 echo ============================================
 echo   Setup complete! Run app.bat to start.

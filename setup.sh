@@ -86,6 +86,45 @@ else
     echo "[INFO] No NVIDIA GPU detected. Skipping faster-qwen3-tts."
 fi
 
+# ============================================
+#   Irodori-TTS (optional, GPU only)
+# ============================================
+echo ""
+echo "============================================"
+echo "  Irodori-TTS Setup (optional)"
+echo "============================================"
+if ! nvidia-smi > /dev/null 2>&1; then
+    echo "[INFO] No NVIDIA GPU detected. Skipping Irodori-TTS (GPU required)."
+elif ! command -v git > /dev/null 2>&1; then
+    echo "[WARN] git not found. Skipping Irodori-TTS."
+    echo "[WARN] Install git and re-run setup to enable Irodori."
+else
+    mkdir -p engines
+    if [ ! -d "engines/Irodori-TTS" ]; then
+        echo "[INFO] Cloning Irodori-TTS..."
+        if ! git clone https://github.com/Aratako/Irodori-TTS.git engines/Irodori-TTS; then
+            echo "[WARN] git clone failed. Skipping Irodori-TTS."
+        fi
+    else
+        echo "[INFO] engines/Irodori-TTS already exists. Skipping clone."
+    fi
+
+    if [ -d "engines/Irodori-TTS" ]; then
+        echo "[INFO] Installing uv into main venv..."
+        if pip install -U uv; then
+            echo "[INFO] Running uv sync --extra cu128 in engines/Irodori-TTS..."
+            (cd engines/Irodori-TTS && uv sync --extra cu128)
+            if [ $? -eq 0 ]; then
+                echo "[INFO] Irodori-TTS setup complete."
+            else
+                echo "[WARN] uv sync failed. Irodori-TTS may not be usable."
+            fi
+        else
+            echo "[WARN] uv installation failed. Skipping Irodori-TTS."
+        fi
+    fi
+fi
+
 echo ""
 echo "============================================"
 echo "  Setup complete! Run app.sh to start."
