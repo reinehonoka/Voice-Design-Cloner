@@ -64,7 +64,7 @@ def build_settings_tab(manager: ModelManager):
                     label="faster-qwen3-tts", interactive=False,
                 )
                 gr.Textbox(
-                    value=t("settings_faster_installed") if _irodori_available() else t("settings_faster_not_installed"),
+                    value=t("settings_irodori_installed") if _irodori_available() else t("settings_irodori_not_installed"),
                     label="Irodori-TTS", interactive=False,
                 )
                 refresh_btn = gr.Button(t("settings_btn_refresh"), variant="secondary")

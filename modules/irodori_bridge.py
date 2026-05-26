@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import threading
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -51,7 +52,9 @@ class IrodoriBridge:
         self.irodori_root = irodori_root or _default_irodori_root()
         self._proc: subprocess.Popen | None = None
         self._lock = threading.Lock()
-        self._stderr_buf: list[str] = []
+        # Bounded so a long-running worker that prints a lot of progress lines
+        # doesn't leak memory.
+        self._stderr_buf: deque[str] = deque(maxlen=200)
         self._stderr_thread: threading.Thread | None = None
 
     # ------------------------------------------------------------------ availability
@@ -97,7 +100,7 @@ class IrodoriBridge:
                 errors="replace",
                 bufsize=1,
             )
-            self._stderr_buf = []
+            self._stderr_buf.clear()
             self._stderr_thread = threading.Thread(
                 target=self._stderr_pump, args=(self._proc.stderr,), daemon=True,
             )
@@ -152,7 +155,7 @@ class IrodoriBridge:
             pass
 
     def _collected_stderr(self) -> str:
-        return "".join(self._stderr_buf[-200:])
+        return "".join(self._stderr_buf)
 
     def _send(self, payload: dict[str, Any]) -> dict[str, Any]:
         with self._lock:

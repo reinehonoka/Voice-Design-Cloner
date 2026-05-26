@@ -155,6 +155,8 @@ _STRINGS: dict[str, dict[str, str]] = {
         "settings_faster_label": "faster-qwen3-tts",
         "settings_faster_installed": "インストール済み",
         "settings_faster_not_installed": "未インストール（pip install faster-qwen3-tts）",
+        "settings_irodori_installed": "インストール済み",
+        "settings_irodori_not_installed": "未インストール（setup.bat を再実行してください）",
         "settings_btn_refresh": "更新",
         # ── Manual tab ──
         "manual_intro": (
@@ -387,6 +389,8 @@ _STRINGS: dict[str, dict[str, str]] = {
         "settings_faster_label": "faster-qwen3-tts",
         "settings_faster_installed": "Installed",
         "settings_faster_not_installed": "Not installed (pip install faster-qwen3-tts)",
+        "settings_irodori_installed": "Installed",
+        "settings_irodori_not_installed": "Not installed (re-run setup.bat)",
         "settings_btn_refresh": "Refresh",
         # ── Manual tab ──
         "manual_intro": (
@@ -619,6 +623,8 @@ _STRINGS: dict[str, dict[str, str]] = {
         "settings_faster_label": "faster-qwen3-tts",
         "settings_faster_installed": "已安装",
         "settings_faster_not_installed": "未安装（pip install faster-qwen3-tts）",
+        "settings_irodori_installed": "已安装",
+        "settings_irodori_not_installed": "未安装（请重新运行 setup.bat）",
         "settings_btn_refresh": "刷新",
         # ── Manual tab ──
         "manual_intro": (
@@ -850,6 +856,8 @@ _STRINGS: dict[str, dict[str, str]] = {
         "settings_faster_label": "faster-qwen3-tts",
         "settings_faster_installed": "설치됨",
         "settings_faster_not_installed": "미설치 (pip install faster-qwen3-tts)",
+        "settings_irodori_installed": "설치됨",
+        "settings_irodori_not_installed": "미설치 (setup.bat 다시 실행)",
         "settings_btn_refresh": "새로고침",
         # ── Manual tab ──
         "manual_intro": (

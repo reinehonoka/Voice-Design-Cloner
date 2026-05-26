@@ -109,12 +109,19 @@ def _save_wav_resampled(path: Path, audio, src_sr: int, target_sr: int | None) -
     if target_sr is None or target_sr == src_sr:
         save_wav(path, audio, src_sr)
         return
-    import librosa
+    # Resample via torchaudio (already a direct dep of Irodori-TTS) rather
+    # than librosa, which isn't pinned in Irodori's pyproject.
     import numpy as np
     import soundfile as sf
-    wav = audio.squeeze().cpu().numpy().astype(np.float32)
-    resampled = librosa.resample(wav, orig_sr=src_sr, target_sr=target_sr)
-    sf.write(str(path), resampled, target_sr)
+    import torch
+    import torchaudio
+    wav = audio.squeeze().detach().cpu()
+    if wav.dim() == 1:
+        wav = wav.unsqueeze(0)
+    resampled = torchaudio.functional.resample(
+        wav, orig_freq=int(src_sr), new_freq=int(target_sr),
+    )
+    sf.write(str(path), resampled.squeeze(0).numpy().astype(np.float32), int(target_sr))
 
 
 def handle_synthesize(state: WorkerState, req: dict[str, Any]) -> dict[str, Any]:
@@ -125,12 +132,6 @@ def handle_synthesize(state: WorkerState, req: dict[str, Any]) -> dict[str, Any]
     runtime = state.ensure_runtime(mode)
 
     text = req["text"]
-    caption_in = req.get("caption")
-    print(
-        f"[worker] mode={mode} text_type={type(text).__name__} text_repr={text!r} "
-        f"caption_type={type(caption_in).__name__} caption_repr={caption_in!r}",
-        file=sys.stderr, flush=True,
-    )
     out_path = Path(req["out_path"])
     out_path.parent.mkdir(parents=True, exist_ok=True)
     target_sr = req.get("target_sr")
