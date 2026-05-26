@@ -151,6 +151,7 @@ def handle_synthesize(state: WorkerState, req: dict[str, Any]) -> dict[str, Any]
         # master/design/voice_design.py.
         seconds=(30.0 if mode == "design" else None),
         max_ref_seconds=30.0,
+        lora_adapter=req.get("lora_path"),
         max_text_len=None,
         max_caption_len=None,
         num_steps=40,

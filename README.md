@@ -6,8 +6,8 @@
 
 音声合成で大変な**録音・コーパス構築・量産・リサンプル**の問題を解決。
 
-[Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) の VoiceDesign と VoiceClone を GUI で操作できるツールです。
-声の設計から [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2) の学習に必要な教師データ作成まで、一気通貫で完結します。
+[Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) と [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) の VoiceDesign / VoiceClone / LoRA学習 を GUI で操作できるツールです。
+声の設計から [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2) の学習用教師データ作成、さらに Irodori-TTS の LoRA ファインチューンまで、一気通貫で完結します。
 
 **UI表示・梱包コーパス・音声生成言語をワンクリックで切り替え — JA / EN / ZH / KO 対応**
 
@@ -27,6 +27,7 @@
 - **声の設計** — テキストプロンプトでゼロからオリジナルの声を生成
 - **声ガチャ** — 気に入るまで何度でもやり直し可能
 - **コーパス一括音声化** — 選んだ声で数百〜数千文をボタン一つで量産
+- **LoRAファインチューン**（Irodori-TTS） — クローン出力をそのまま学習データに、シームレスにLoRA学習
 - **リサンプル・esd.list生成** — Style-Bert-VITS2学習に必要な前処理まで完結
 
 出力はStyle-Bert-VITS2の学習データ形式（44.1kHz WAV + esd.list）で直接渡せます。
@@ -74,8 +75,13 @@
 
 `setup.bat` が venv の作成・PyTorch・依存ライブラリのインストールをすべて自動で行います。
 
-NVIDIA GPU が検出された場合、**faster-qwen3-tts** は自動でインストールされます。
-後から追加する場合：
+NVIDIA GPU が検出された場合、**faster-qwen3-tts** と **Irodori-TTS** が自動でインストールされます。
+Irodori-TTS は torch のバージョンが Qwen3 と非互換（2.10/cu128）なので、専用の venv で別管理しています。
+
+- インストール先: `%USERPROFILE%\.vdc-engines\Irodori-TTS\`（Linux: `~/.vdc-engines/`）
+- vdc 本体からはサブプロセスのワーカーとして呼び出されます
+
+後から faster-qwen3-tts を手動で追加する場合：
 
 ```
 venv\Scripts\activate
@@ -93,13 +99,15 @@ pip install faster-qwen3-tts
 大まかな流れ：
 
 ```
-1. [Voice Design] タブ — 声を設計・プレビュー・保存
-2. [Voice Clone]  タブ — 保存した声でコーパスを一括音声化
-3. [Tools]        タブ — リサンプル・esd.list 生成
-4. [Settings]     タブ — 推論バックエンド確認・切替
+1. [ボイスデザイン]  タブ — 声を設計・プレビュー・保存
+2. [ボイスクローン]  タブ — 保存した声でコーパスを一括音声化（オプション: クローン完了後にLoRA学習）
+3. [LoRA学習]      タブ — Irodori-TTS の LoRA ファインチューン（独立実行も可能）
+4. [Irodori推論]   タブ — 学習済LoRAを1文ずつ試聴・名前付き保存
+5. [ツール]         タブ — リサンプル・esd.list 生成
+6. [設定]           タブ — 推論バックエンド確認・切替（Qwen3-TTS / faster / Irodori-TTS）
 ```
 
-基本1と2だけで完結します。
+基本1と2だけで完結します。LoRA学習/Irodori推論はバックエンドが **Irodori-TTS** のときに本領発揮します。
 
 > **注意**: Voice Clone の停止ボタンを押すと、ステータスが「エラー」と表示されます。これは Gradio の仕様で、実際には正常に停止しています。生成済みのファイルはそのまま残ります。
 
@@ -173,13 +181,17 @@ esd.list の形式：
 
 ## 推論バックエンド
 
-| バックエンド | 速度 | 対応モデル |
-|---|---|---|
-| **faster**（推奨） | 約6-10倍速（RTF ~2.0） | 1.7B-VoiceDesign / 1.7B-Base |
-| **standard** | 標準速度 | すべて（CPU/GPU） |
+| バックエンド | エンジン | 速度 | 対応言語 | 備考 |
+|---|---|---|---|---|
+| **faster**（推奨） | Qwen3-TTS | 約6-10倍速（RTF ~2.0） | 10言語 | GPU必須・0.6B-Base非対応 |
+| **Qwen3-TTS** | Qwen3-TTS | 標準速度 | 10言語 | CPU/GPU両対応 |
+| **Irodori-TTS** | Irodori-TTS | 6-7秒/文 | 日本語のみ | GPU必須・48kHz拡散モデル・LoRA対応 |
 
 faster バックエンドは [faster-qwen3-tts](https://github.com/andimarafioti/faster-qwen3-tts) による CUDA Graph 最適化を使用。
 **0.6B-Base は faster 非対応**のため、fasterバックエンド選択中でも自動的に standard で動作します。
+
+Irodori-TTS バックエンドを選択すると、ボイスデザイン/ボイスクローン両タブのUIが日本語固定モードに切り替わり、LoRA学習タブとIrodori推論タブが利用可能になります。
+バックエンドを切り替えるとアプリが自動再起動し、各タブが対応するUI状態でレンダリングされます。
 
 ---
 
@@ -190,6 +202,8 @@ faster バックエンドは [faster-qwen3-tts](https://github.com/andimarafioti
 使用しているOSS:
 - [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) — Apache License 2.0
 - [faster-qwen3-tts](https://github.com/andimarafioti/faster-qwen3-tts) — Apache License 2.0
+- [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) — MIT License（モデルカードに追加の倫理制限あり）
+- [Semantic-DACVAE-Japanese-32dim](https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim) — MIT License
 - [M2M-100](https://huggingface.co/facebook/m2m100_418M) — MIT License
 - [Gradio](https://github.com/gradio-app/gradio) — Apache License 2.0
 - ITAコーパス / ROHANコーパス / MANAコーパス — Public Domain
@@ -200,12 +214,22 @@ faster バックエンドは [faster-qwen3-tts](https://github.com/andimarafioti
 
 ## 免責事項
 
-本ツールは Qwen3-TTS（Apache License 2.0）の GUI ラッパーです。
+本ツールは Qwen3-TTS（Apache License 2.0）および Irodori-TTS（MIT License）の GUI ラッパーです。
 
 ### Qwen3-TTS の学習データについて
 
 Qwen3-TTS の学習データはブラックボックスであり、その内容・権利状況は公開されていません。
 商用利用の際は Qwen3-TTS の利用規約を十分に確認してください。
+
+### Irodori-TTS の倫理制限について
+
+Irodori-TTS のモデルカードには MIT License に加えて以下の倫理制限が明記されています:
+
+- 実在の人物・声優・著名人の声を**本人の許諾なく意図的に模倣**することの禁止
+- 虚偽情報・ディープフェイク目的の音声生成の禁止
+- 開発者は誤用について一切の責任を負わない（利用者責任）
+
+LoRA 学習・推論機能を利用する場合は上記制限も遵守してください。
 
 ### パブリシティ権・著作権・関連法令について
 

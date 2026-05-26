@@ -181,6 +181,7 @@ class IrodoriBridge:
         ref_wav: str | Path | None = None,
         seed: int | None = None,
         target_sr: int | None = None,
+        lora_path: str | Path | None = None,
     ) -> dict[str, Any]:
         """Run one synthesis. Starts worker if needed. Synchronous."""
         self.ensure_started()
@@ -195,6 +196,8 @@ class IrodoriBridge:
         }
         if ref_wav is not None:
             req["ref_wav"] = str(ref_wav)
+        if lora_path is not None:
+            req["lora_path"] = str(lora_path)
         resp = self._send(req)
         if not resp.get("ok"):
             msg = resp.get("error") or "Irodori worker reported failure"

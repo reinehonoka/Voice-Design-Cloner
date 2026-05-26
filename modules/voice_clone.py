@@ -38,6 +38,7 @@ def batch_clone(
     target_sr: int = 44100,
     corpus_lang: str = "ja",
     tts_language: str | None = None,
+    lora_path: str | None = None,
 ):
     """Clone a voice across all texts. Yields (progress_pct, status_msg) per file,
     then yields (1.0, stats_dict) as the final item."""
@@ -53,6 +54,7 @@ def batch_clone(
             ref_audio=ref_audio, texts=texts,
             output_folder=output_folder, wavs_folder=wavs_folder,
             esd_filename=esd_filename, target_sr=target_sr,
+            lora_path=lora_path,
         )
         return
 
@@ -139,6 +141,7 @@ def _batch_clone_irodori(
     wavs_folder: str,
     esd_filename: str,
     target_sr: int,
+    lora_path: str | None = None,
 ):
     """Irodori variant of batch_clone. Worker writes wavs directly."""
     from modules.irodori_bridge import get_bridge
@@ -176,6 +179,7 @@ def _batch_clone_irodori(
                 ref_wav=ref_audio,
                 out_path=wav_path,
                 target_sr=int(target_sr),
+                lora_path=lora_path,
             )
         except Exception as e:
             raise RuntimeError(f"Voice clone failed at line {i + 1}: {e}") from e

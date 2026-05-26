@@ -28,6 +28,24 @@
 - **URL**: https://github.com/andimarafioti/faster-qwen3-tts
 - **Usage**: CUDA Graph-optimized inference backend for Qwen3-TTS
 
+## Irodori-TTS
+
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2026 Aratako
+- **URL**: https://github.com/Aratako/Irodori-TTS
+- **Usage**: Japanese-specialized 48kHz diffusion TTS backend; powers the Irodori-TTS backend, the LoRA training tab, and the Irodori Inference tab
+- **Models used (all MIT)**:
+  - `Aratako/Irodori-TTS-500M-v3` — clone checkpoint
+  - `Aratako/Irodori-TTS-500M-v2-VoiceDesign` — voice design checkpoint
+- **Note**: The Irodori-TTS model cards add ethical restrictions on top of the MIT License — no impersonation, no misinformation, no deepfake. Users must comply with these in addition to the license terms.
+
+## Semantic-DACVAE-Japanese-32dim
+
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2026 Aratako
+- **URL**: https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim
+- **Usage**: Audio codec used by Irodori-TTS to encode/decode waveforms ↔ latents
+
 ## NoCrypt/miku (Gradio Theme)
 
 - **License**: Apache License 2.0

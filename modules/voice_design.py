@@ -56,13 +56,59 @@ def _generate_voice_design_irodori(text: str, caption: str):
             pass
 
 
+def generate_clone_oneshot_irodori(
+    *,
+    text: str,
+    ref_wav: str,
+    caption: str | None = None,
+    lora_path: str | None = None,
+    seed: int | None = None,
+):
+    """One-shot Irodori clone (mode=clone, single utterance) for the Inference tab.
+
+    Returns (sample_rate, audio_array). The worker writes to a temp wav which
+    we then read back as numpy so it plugs into gradio's preview directly.
+    """
+    from modules.irodori_bridge import get_bridge
+    bridge = get_bridge()
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        out_path = tmp.name
+    try:
+        bridge.synthesize(
+            mode="clone",
+            text=text,
+            caption=caption,
+            ref_wav=ref_wav,
+            out_path=out_path,
+            seed=seed,
+            lora_path=lora_path,
+        )
+        audio, sr = sf.read(out_path, dtype="float32")
+        return sr, audio
+    finally:
+        try:
+            os.remove(out_path)
+        except OSError:
+            pass
+
+
 def save_voice(audio_tuple, name: str, sample_text: str = "") -> str:
-    """Save audio data as a named voice file, plus a transcript txt.
-    audio_tuple: (sr, numpy_array)."""
+    """Save a Voice Design generation under ``output/voice_design/``."""
+    return _save_named_clip(audio_tuple, name, sample_text, VOICE_DESIGN_DIR, "voice_design")
+
+
+def save_irodori_infer(audio_tuple, name: str, sample_text: str = "") -> str:
+    """Save an Irodori Inference one-shot generation under ``output/irodori_infer/``."""
+    from config import OUTPUT_DIR
+    target_dir = OUTPUT_DIR / "irodori_infer"
+    return _save_named_clip(audio_tuple, name, sample_text, target_dir, "irodori_infer")
+
+
+def _save_named_clip(audio_tuple, name: str, sample_text: str, target_dir: Path, default: str) -> str:
     sr, audio = audio_tuple
-    os.makedirs(VOICE_DESIGN_DIR, exist_ok=True)
-    safe_name = _sanitize_filename(name)
-    dest = str(VOICE_DESIGN_DIR / f"{safe_name}.wav")
+    os.makedirs(target_dir, exist_ok=True)
+    safe_name = _sanitize_filename(name, default=default)
+    dest = str(target_dir / f"{safe_name}.wav")
     if os.path.exists(dest):
         base, ext = os.path.splitext(dest)
         i = 1
@@ -70,11 +116,9 @@ def save_voice(audio_tuple, name: str, sample_text: str = "") -> str:
             i += 1
         dest = f"{base}_{i}{ext}"
     sf.write(dest, audio, sr, subtype="PCM_16")
-    # Save transcript txt alongside wav
     txt_path = os.path.splitext(dest)[0] + ".txt"
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(sample_text)
-    # Normalize to an absolute path for clearer status output.
     return str(Path(dest).resolve())
 
 

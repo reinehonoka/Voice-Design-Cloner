@@ -12,6 +12,8 @@ from modules.model_manager import ModelManager
 from lang import t
 from ui.tab_voice_design import build_voice_design_tab
 from ui.tab_voice_clone import build_voice_clone_tab
+from ui.tab_lora import build_lora_tab
+from ui.tab_irodori_infer import build_irodori_infer_tab
 from ui.tab_tools import build_tools_tab
 from ui.tab_manual import build_manual_tab
 from ui.tab_settings import build_settings_tab
@@ -80,6 +82,10 @@ with gr.Blocks(title="VoiceDesignCloner", theme="NoCrypt/miku") as demo:
             build_voice_design_tab(manager)
         with gr.Tab(t("tab_voice_clone")):
             build_voice_clone_tab(manager)
+        with gr.Tab(t("tab_lora")):
+            build_lora_tab(manager)
+        with gr.Tab(t("tab_irodori_infer")):
+            build_irodori_infer_tab(manager)
         with gr.Tab(t("tab_tools")):
             build_tools_tab()
         with gr.Tab(t("tab_settings")):

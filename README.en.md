@@ -4,8 +4,8 @@
 
 Solves the hardest problems in voice synthesis: **recording, corpus building, bulk generation, and resampling**.
 
-A GUI tool for [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) VoiceDesign and VoiceClone.
-From voice design to generating training data for [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2) — all in one place.
+A GUI tool for [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) and [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) — VoiceDesign / VoiceClone / LoRA fine-tuning.
+From voice design and bulk synthesis for [Style-Bert-VITS2](https://github.com/litagin02/Style-Bert-VITS2) training data, all the way to LoRA fine-tuning of Irodori-TTS — everything in one place.
 
 **Switch UI language, bundled corpus, and generation language with one click — JA / EN / ZH / KO supported**
 
@@ -25,6 +25,7 @@ Voice design, bulk generation, and preprocessing — done in just a few button c
 - **Voice Design** — Generate a completely original voice from scratch using text prompts
 - **Voice Gacha** — Keep regenerating until you find the voice you love
 - **Bulk Corpus Synthesis** — Generate hundreds to thousands of lines with your chosen voice at the push of a button
+- **LoRA fine-tuning** (Irodori-TTS) — Train a LoRA on your clone output, seamlessly
 - **Resample & esd.list generation** — Preprocessing for Style-Bert-VITS2 training, all handled automatically
 
 Output is in Style-Bert-VITS2 training data format (44.1kHz WAV + esd.list), ready to use directly.
@@ -72,8 +73,13 @@ Output can also be used with other TTS engines.
 
 `setup.bat` automatically handles venv creation, PyTorch, and all dependency installation.
 
-If an NVIDIA GPU is detected, **faster-qwen3-tts** is installed automatically.
-To add it manually later:
+If an NVIDIA GPU is detected, both **faster-qwen3-tts** and **Irodori-TTS** are installed automatically.
+Because Irodori-TTS requires a different torch build (2.10/cu128) that's incompatible with Qwen3-TTS's, it lives in its own venv:
+
+- Install location: `%USERPROFILE%\.vdc-engines\Irodori-TTS\` (Linux: `~/.vdc-engines/`)
+- vdc launches it as a subprocess worker
+
+To add faster-qwen3-tts manually later:
 
 ```
 venv\Scripts\activate
@@ -91,13 +97,15 @@ After launching, step-by-step instructions are available in the **Manual tab** i
 General workflow:
 
 ```
-1. [Voice Design] tab — Design, preview, and save your voice
-2. [Voice Clone]  tab — Bulk synthesize your corpus with the saved voice
-3. [Tools]        tab — Resample and generate esd.list
-4. [Settings]     tab — Check and switch inference backend
+1. [Voice Design]    tab — Design, preview, and save your voice
+2. [Voice Clone]     tab — Bulk synthesize your corpus with the saved voice (optional: train a LoRA when done)
+3. [LoRA]            tab — Fine-tune Irodori-TTS with a LoRA adapter (can be run standalone too)
+4. [Irodori Infer]   tab — Play with a trained LoRA one line at a time, save with a custom name
+5. [Tools]           tab — Resample and generate esd.list
+6. [Settings]        tab — Check and switch inference backend (Qwen3-TTS / faster / Irodori-TTS)
 ```
 
-Steps 1 and 2 are all you need for basic use.
+Steps 1 and 2 are all you need for basic use. LoRA / Irodori Inference shine when the **Irodori-TTS** backend is selected.
 
 > **Note**: Pressing the stop button in Voice Clone will show "Error" in the status display. This is a Gradio behavior — the process has actually stopped correctly. All generated files are preserved.
 
@@ -165,13 +173,17 @@ esd.list format:
 
 ## Inference Backends
 
-| Backend | Speed | Supported Models |
-|---|---|---|
-| **faster** (recommended) | ~6–10x faster (RTF ~2.0) | 1.7B-VoiceDesign / 1.7B-Base |
-| **standard** | Standard speed | All (CPU/GPU) |
+| Backend | Engine | Speed | Languages | Notes |
+|---|---|---|---|---|
+| **faster** (recommended) | Qwen3-TTS | ~6–10x faster (RTF ~2.0) | 10 | GPU required, 0.6B-Base unsupported |
+| **Qwen3-TTS** | Qwen3-TTS | Standard speed | 10 | CPU/GPU |
+| **Irodori-TTS** | Irodori-TTS | ~6–7 s/sentence | Japanese only | GPU required, 48kHz diffusion, LoRA support |
 
 The faster backend uses CUDA Graph optimization via [faster-qwen3-tts](https://github.com/andimarafioti/faster-qwen3-tts).
 **0.6B-Base is not supported by faster** — when faster is selected, it automatically falls back to standard for this model.
+
+Selecting the Irodori-TTS backend switches Voice Design / Voice Clone tabs to Japanese-only mode and enables the LoRA and Irodori Inference tabs.
+Switching backends auto-restarts the app so every tab renders with the appropriate lock state.
 
 ---
 
@@ -182,6 +194,8 @@ This tool: [MIT License](LICENSE)
 OSS used:
 - [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS) — Apache License 2.0
 - [faster-qwen3-tts](https://github.com/andimarafioti/faster-qwen3-tts) — Apache License 2.0
+- [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) — MIT License (model card includes additional ethical restrictions)
+- [Semantic-DACVAE-Japanese-32dim](https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim) — MIT License
 - [M2M-100](https://huggingface.co/facebook/m2m100_418M) — MIT License
 - [Gradio](https://github.com/gradio-app/gradio) — Apache License 2.0
 - ITA corpus / ROHAN corpus / MANA corpus — Public Domain
@@ -192,12 +206,22 @@ Details: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)
 
 ## Disclaimer
 
-This tool is a GUI wrapper for Qwen3-TTS (Apache License 2.0).
+This tool is a GUI wrapper for Qwen3-TTS (Apache License 2.0) and Irodori-TTS (MIT License).
 
 ### About Qwen3-TTS Training Data
 
 The training data of Qwen3-TTS is a black box — its contents and rights status have not been disclosed.
 For commercial use, please carefully review the Qwen3-TTS terms of service.
+
+### About Irodori-TTS Ethical Restrictions
+
+The Irodori-TTS model cards add the following ethical restrictions on top of the MIT License:
+
+- Do not intentionally impersonate real individuals, voice actors, or public figures without their consent
+- Do not generate audio intended for misinformation or deepfake purposes
+- The developers assume no liability for misuse (user responsibility)
+
+When using the LoRA training / inference features, please comply with these restrictions as well.
 
 ### Publicity Rights, Copyright, and Related Laws
 

@@ -6,8 +6,16 @@ from modules.voice_clone import batch_clone
 from modules.voice_design import list_kept_voice_numbers, get_kept_voice_path, get_kept_voice_text, TTS_LANGUAGES
 from modules.utils import list_corpus_files, load_corpus, format_duration
 from modules.model_manager import ModelManager
+from modules.lora_pipeline import (
+    STEP_PRESETS,
+    get_lora_adapter_path,
+    list_loras,
+    run_lora_pipeline,
+)
 from config import DEFAULT_TARGET_SR, TTS_LANG
 from lang import t
+
+_LORA_NONE = "—"
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +143,39 @@ def build_voice_clone_tab(manager: ModelManager):
                 target_sr = gr.Dropdown(
                     choices=[44100, 48000, 24000, 22050], value=DEFAULT_TARGET_SR, label=t("vc_sr_label"),
                 )
+                if is_irodori:
+                    lora_choices = [_LORA_NONE, *list_loras()]
+                    lora_dropdown = gr.Dropdown(
+                        choices=lora_choices, value=_LORA_NONE,
+                        label=t("vc_lora_label"),
+                    )
+                    lora_refresh_btn = gr.Button(
+                        t("vc_btn_lora_refresh"), size="sm", variant="secondary",
+                    )
+                else:
+                    lora_dropdown = gr.State(_LORA_NONE)
+                    lora_refresh_btn = None
+
+            if is_irodori:
+                gr.HTML("<div style='height: 12px'></div>")
+                gr.Markdown(t("vc_autotrain_section"))
+                with gr.Group():
+                    autotrain_toggle = gr.Checkbox(
+                        value=False, label=t("vc_autotrain_label"),
+                    )
+                    with gr.Row():
+                        autotrain_speaker = gr.Textbox(
+                            label=t("lora_speaker_label"), placeholder="honoka",
+                        )
+                        autotrain_steps = gr.Radio(
+                            choices=[(f"{k} ({v})", k) for k, v in STEP_PRESETS.items()],
+                            value="quick",
+                            label=t("lora_steps_label"),
+                        )
+            else:
+                autotrain_toggle = gr.State(False)
+                autotrain_speaker = gr.State("")
+                autotrain_steps = gr.State("quick")
 
             gr.HTML("<div style='height: 12px'></div>")
 
@@ -288,8 +329,13 @@ def build_voice_clone_tab(manager: ModelManager):
         outputs=[corpus_total_lines, corpus_total_chars],
     )
 
+    if is_irodori and lora_refresh_btn is not None:
+        def _refresh_loras():
+            return gr.update(choices=[_LORA_NONE, *list_loras()], value=_LORA_NONE)
+        lora_refresh_btn.click(fn=_refresh_loras, outputs=[lora_dropdown])
+
     # ── Clone ──
-    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, tts_lang, out_folder, wavs_name, esd_name, sr, resolved_path, corpus_lang, progress=gr.Progress()):
+    def on_clone(r_mode, shortcut_num, uploaded_audio, ref_t, c_mode, corpus_file, uploaded_file, count, model, tts_lang, out_folder, wavs_name, esd_name, sr, resolved_path, corpus_lang, lora_choice, do_autotrain, autotrain_spk, autotrain_st, progress=gr.Progress()):
         if r_mode == t("vc_ref_tab_upload") and uploaded_audio:
             ref = _resolve_uploaded_path(uploaded_audio)
         elif resolved_path:
@@ -335,6 +381,12 @@ def build_voice_clone_tab(manager: ModelManager):
         if not esd.endswith(".txt"):
             esd += ".txt"
 
+        lora_path: str | None = None
+        if manager.backend == "irodori" and lora_choice and lora_choice != _LORA_NONE:
+            lora_path = get_lora_adapter_path(lora_choice)
+
+        clone_result_lines: list[str] = []
+        clone_stats: dict | None = None
         try:
             for pct, payload in batch_clone(
                 manager, ref_audio=ref, ref_text=ref_t, texts=texts,
@@ -344,15 +396,17 @@ def build_voice_clone_tab(manager: ModelManager):
                 model_key=model, target_sr=int(sr),
                 corpus_lang=corpus_lang,
                 tts_language=tts_lang,
+                lora_path=lora_path,
             ):
                 if isinstance(payload, dict):
-                    stats = payload
+                    clone_stats = payload
                     result = t("vc_result_files").format(
-                        stats["total_files"],
-                        format_duration(stats["total_duration_sec"]),
-                        stats["output_dir"],
-                        stats["esd_path"],
+                        payload["total_files"],
+                        format_duration(payload["total_duration_sec"]),
+                        payload["output_dir"],
+                        payload["esd_path"],
                     )
+                    clone_result_lines.append(result)
                     yield t("vc_ok_done"), result
                 else:
                     progress(pct, desc=payload)
@@ -363,6 +417,43 @@ def build_voice_clone_tab(manager: ModelManager):
             else:
                 logger.exception("Clone failed")
                 yield t("vc_clone_fail").format(e), ""
+            return
+
+        # ── Chain into LoRA training when the user opted in ──
+        if (
+            manager.backend == "irodori"
+            and do_autotrain
+            and clone_stats is not None
+            and (autotrain_spk or "").strip()
+        ):
+            out_folder_name = (out_folder.strip() or "clone")
+            try:
+                for ev in run_lora_pipeline(
+                    source=out_folder_name,
+                    speaker=autotrain_spk.strip(),
+                    steps=autotrain_st,
+                ):
+                    kind = ev.get("event")
+                    if kind == "stage":
+                        line = f"[{ev['status']}] {ev.get('message', '')}"
+                        clone_result_lines.append(line)
+                        yield line, "\n".join(clone_result_lines[-40:])
+                    elif kind == "progress":
+                        line = f"train step {ev.get('step')}/{ev.get('max_steps')}"
+                        if ev.get("loss") is not None:
+                            line += f"  loss={ev['loss']:.4f}"
+                        yield line, "\n".join(clone_result_lines[-39:] + [line])
+                    elif kind == "log":
+                        clone_result_lines.append(ev.get("raw", ""))
+                    elif kind == "done":
+                        summary = t("lora_ok_done").format(
+                            ev.get("speaker"), ev.get("output_dir"),
+                        )
+                        clone_result_lines.append(summary)
+                        yield t("vc_autotrain_done"), "\n".join(clone_result_lines[-40:])
+            except Exception as e:
+                logger.exception("Auto-train LoRA pipeline failed")
+                yield t("lora_err_failed").format(e), "\n".join(clone_result_lines[-40:])
 
     clone_event = clone_btn.click(
         fn=on_clone,
@@ -371,6 +462,7 @@ def build_voice_clone_tab(manager: ModelManager):
             corpus_mode, corpus_dropdown, upload_file, corpus_count,
             model_choice, tts_lang_dropdown, output_folder, wavs_folder, esd_filename, target_sr, resolved_ref_path,
             corpus_lang_state,
+            lora_dropdown, autotrain_toggle, autotrain_speaker, autotrain_steps,
         ],
         outputs=[progress_text, result_text],
     )
