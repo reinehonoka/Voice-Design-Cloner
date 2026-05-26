@@ -15,6 +15,8 @@ def build_manual_tab():
     gr.Markdown("---")
     gr.Markdown(t("manual_settings"))
     gr.Markdown("---")
+    gr.Markdown(t("manual_irodori"))
+    gr.Markdown("---")
     gr.Markdown(t("manual_sbv2"))
     gr.Markdown("---")
     gr.Markdown(t("manual_vram"))
