@@ -210,6 +210,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "ii_err_no_ref": "エラー: 参照音声を選択してください",
         "ii_err_ref_not_found": "エラー: 参照音声が見つかりません",
         "ii_err_no_text": "エラー: テキストを入力してください",
+        "ii_emoji_palette_label": "絵文字スタイル制御（クリックでテキスト末尾に挿入）",
         # ── Manual tab ──
         "manual_intro": (
             "## VoiceDesignCloner とは\n\n"
@@ -546,6 +547,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "ii_err_no_ref": "Error: select a reference voice",
         "ii_err_ref_not_found": "Error: reference voice not found",
         "ii_err_no_text": "Error: enter some text",
+        "ii_emoji_palette_label": "Emoji style control (click to append to text)",
         # ── Manual tab ──
         "manual_intro": (
             "## What is VoiceDesignCloner?\n\n"
@@ -882,6 +884,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "ii_err_no_ref": "错误: 请选择参考音频",
         "ii_err_ref_not_found": "错误: 找不到参考音频",
         "ii_err_no_text": "错误: 请输入文本",
+        "ii_emoji_palette_label": "Emoji 风格控制（点击追加到文本末尾）",
         # ── Manual tab ──
         "manual_intro": (
             "## 什么是 VoiceDesignCloner？\n\n"
@@ -1210,6 +1213,7 @@ _STRINGS: dict[str, dict[str, str]] = {
         "ii_err_no_ref": "오류: 참조 음성을 선택해 주세요",
         "ii_err_ref_not_found": "오류: 참조 음성을 찾을 수 없습니다",
         "ii_err_no_text": "오류: 텍스트를 입력해 주세요",
+        "ii_emoji_palette_label": "이모지 스타일 제어 (클릭하여 텍스트 끝에 추가)",
         # ── Manual tab ──
         "manual_intro": (
             "## VoiceDesignCloner 란?\n\n"

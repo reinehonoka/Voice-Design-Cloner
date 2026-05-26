@@ -10,6 +10,7 @@ import logging
 import gradio as gr
 
 from lang import t
+from modules.emoji_palette import EMOJI_CATEGORIES, append_emoji
 from modules.lora_pipeline import get_lora_adapter_path, get_lora_training_wav, list_loras
 from modules.model_manager import ModelManager
 from modules.voice_design import (
@@ -72,6 +73,19 @@ def build_irodori_infer_tab(manager: ModelManager):
                     lines=4,
                     interactive=is_irodori,
                 )
+                with gr.Accordion(t("ii_emoji_palette_label"), open=False):
+                    emoji_buttons: list[tuple[gr.Button, str]] = []
+                    for category, items in EMOJI_CATEGORIES.items():
+                        gr.Markdown(f"**{category}**")
+                        with gr.Row():
+                            for emoji, desc in items:
+                                btn = gr.Button(
+                                    value=emoji, size="sm", min_width=44,
+                                    interactive=is_irodori,
+                                )
+                                btn.elem_id = None
+                                btn.show_label = False
+                                emoji_buttons.append((btn, emoji))
 
         # ── Right: params + preview + save ──
         with gr.Column(scale=2):
@@ -185,6 +199,14 @@ def build_irodori_infer_tab(manager: ModelManager):
             return t("vd_err_save_fail").format(e)
 
     save_btn.click(fn=on_save, inputs=[state_audio, save_name, text_input], outputs=[status])
+
+    # Wire each emoji button to append its emoji to the end of the text box.
+    for btn, emoji in emoji_buttons:
+        btn.click(
+            fn=(lambda current, e=emoji: append_emoji(current, e)),
+            inputs=[text_input],
+            outputs=[text_input],
+        )
 
     def _on_tab_select():
         nums = list_kept_voice_numbers()

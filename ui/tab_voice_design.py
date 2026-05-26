@@ -5,6 +5,7 @@ import gradio as gr
 from modules.voice_design import generate_voice_design, save_voice, TTS_LANGUAGES
 from modules.translator import Translator
 from modules.utils import load_presets_localized
+from modules.emoji_palette import EMOJI_CATEGORIES, append_emoji
 from config import DEFAULT_SAMPLE_TEXT, TTS_LANG
 from lang import t
 
@@ -114,6 +115,15 @@ def build_voice_design_tab(manager):
                     label=t("vd_tts_lang_label"),
                     interactive=qwen_interactive,
                 )
+                vd_emoji_buttons: list[tuple[gr.Button, str]] = []
+                if is_irodori:
+                    with gr.Accordion(t("ii_emoji_palette_label"), open=False):
+                        for category, items in EMOJI_CATEGORIES.items():
+                            gr.Markdown(f"**{category}**")
+                            with gr.Row():
+                                for emoji, _desc in items:
+                                    btn = gr.Button(value=emoji, size="sm", min_width=44)
+                                    vd_emoji_buttons.append((btn, emoji))
 
             gr.HTML("<div style='height: 12px'></div>")
 
@@ -216,3 +226,10 @@ def build_voice_design_tab(manager):
             return t("vd_err_save_fail").format(e)
 
     keep_btn.click(fn=on_keep, inputs=[state_path, save_name, sample_text], outputs=[status])
+
+    for btn, emoji in vd_emoji_buttons:
+        btn.click(
+            fn=(lambda current, e=emoji: append_emoji(current, e)),
+            inputs=[sample_text],
+            outputs=[sample_text],
+        )
