@@ -25,6 +25,10 @@ qwen3-tts/
 # プロジェクトディレクトリには展開しないが、誤って配置された場合の保険として残す
 engines/
 
+# ユーザー個別設定（言語・バックエンド選択など）。
+# 初回起動時に config.example.json から作成される。
+config.json
+
 # VSCode
 .vscode/
 

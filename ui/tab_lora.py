@@ -174,11 +174,3 @@ def build_lora_tab(manager: ModelManager):
         )
 
     return {"refresh": _refresh_on_select, "outputs": [source_dropdown, existing_list]}
-
-    def _on_tab_select():
-        return (
-            gr.update(choices=list_clone_sources()),
-            "\n".join(list_loras()) or t("lora_existing_none"),
-        )
-
-    return {"refresh": _on_tab_select, "outputs": [source_dropdown, existing_list]}

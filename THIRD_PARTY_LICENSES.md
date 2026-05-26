@@ -38,6 +38,7 @@
   - `Aratako/Irodori-TTS-500M-v3` — clone checkpoint
   - `Aratako/Irodori-TTS-500M-v2-VoiceDesign` — voice design checkpoint
 - **Note**: The Irodori-TTS model cards add ethical restrictions on top of the MIT License — no impersonation, no misinformation, no deepfake. Users must comply with these in addition to the license terms.
+- **Derived material**: The emoji style-control palette in `modules/emoji_palette.py` is derived from the cheat sheet in `master/clone/clone.py` of Irodori-TTS (MIT).
 
 ## Semantic-DACVAE-Japanese-32dim
 

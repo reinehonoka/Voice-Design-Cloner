@@ -21,6 +21,38 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator
 
+# Train and Irodori inference both grab the GPU and can OOM if run together.
+# A single process-wide lock keeps them serialized. Callers outside this
+# module should use ``gpu_session()``.
+_GPU_LOCK = threading.Lock()
+
+
+class GPUBusyError(RuntimeError):
+    """Raised when another LoRA training or Irodori inference is in flight."""
+
+
+def gpu_session():
+    """Acquire the GPU lock non-blocking; release on context exit.
+
+    Use as ``with gpu_session(): ...`` around any GPU-claiming work to make
+    sure inference and training never overlap.
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _cm():
+        if not _GPU_LOCK.acquire(blocking=False):
+            raise GPUBusyError(
+                "Another GPU job is already running (LoRA training or Irodori "
+                "inference). Wait for it to finish before starting a new one."
+            )
+        try:
+            yield
+        finally:
+            _GPU_LOCK.release()
+
+    return _cm()
+
 from config import BASE_DIR, OUTPUT_DIR
 from modules.irodori_bridge import _default_irodori_root
 
@@ -124,14 +156,29 @@ def get_lora_adapter_path(speaker: str) -> str | None:
 
 def _resolve_adapter_path(folder: Path) -> Path | None:
     """train.py with --lora writes a PEFT adapter under output-dir.
-    Find the actual checkpoint to pass back to inference."""
-    # peft adapter_model.safetensors layout (newer)
-    for cand in folder.rglob("adapter_model.safetensors"):
-        return cand
-    # Fallback: any *.safetensors in the folder
-    for cand in sorted(folder.rglob("*.safetensors")):
-        return cand
-    return None
+
+    A single run can produce several intermediate ``checkpoint_*`` folders plus
+    a ``checkpoint_final`` (or similar) at the end. We prefer:
+      1. anything named like ``*final*`` or ``*last*``
+      2. otherwise the newest ``adapter_model.safetensors`` by mtime
+
+    Returns the path of the safetensors file (caller derives the directory).
+    """
+    candidates = list(folder.rglob("adapter_model.safetensors"))
+    if not candidates:
+        candidates = sorted(folder.rglob("*.safetensors"))
+    if not candidates:
+        return None
+
+    def _is_final(p: Path) -> bool:
+        parts = "/".join(p.parts).lower()
+        return "final" in parts or "last" in parts
+
+    final_first = sorted(
+        candidates,
+        key=lambda p: (0 if _is_final(p) else 1, -p.stat().st_mtime),
+    )
+    return final_first[0]
 
 
 def _load_esd_lines(path: Path) -> list[tuple[str, str]]:
@@ -251,7 +298,12 @@ def _convert_clone_to_lab(
 def _stream_subprocess(
     cmd: list[str], *, cwd: Path, env: dict | None = None
 ) -> Iterator[str]:
-    """Yield stdout lines from a subprocess, mirroring stderr to logger.warning."""
+    """Yield stdout lines from a subprocess, mirroring stderr to logger.warning.
+
+    Cancellation: when the generator is closed (Gradio cancel / GeneratorExit),
+    the child is terminated, then killed if it doesn't exit promptly. Without
+    this, training would keep holding the GPU after the user pressed Stop.
+    """
     proc = subprocess.Popen(
         cmd,
         cwd=str(cwd),
@@ -270,13 +322,30 @@ def _stream_subprocess(
     stderr_thread = threading.Thread(target=_drain_stderr, args=(proc.stderr,), daemon=True)
     stderr_thread.start()
 
+    cancelled = False
     try:
         assert proc.stdout is not None
         for line in proc.stdout:
             yield line.rstrip("\n")
+    except GeneratorExit:
+        cancelled = True
+        raise
     finally:
-        proc.wait()
+        if proc.poll() is None:
+            try:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=5)
+            except Exception:
+                logger.exception("Failed to clean up subprocess")
+        else:
+            proc.wait()
         stderr_thread.join(timeout=2)
+    if cancelled:
+        return
     if proc.returncode != 0:
         raise RuntimeError(f"subprocess exited with code {proc.returncode}: {' '.join(cmd)}")
 
@@ -346,95 +415,124 @@ def run_lora_pipeline(
             f"Irodori venv python not found at {py}. Re-run setup.bat to install."
         )
 
-    LORA_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    LORA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    lab_root = LORA_DATA_DIR / "lab"
-    jsonl_dir = LORA_DATA_DIR / "jsonl"
-    latents_root = LORA_DATA_DIR / "latents"
-    jsonl_dir.mkdir(parents=True, exist_ok=True)
-    latents_root.mkdir(parents=True, exist_ok=True)
+    # Free up VRAM before training: an in-process Irodori worker would otherwise
+    # compete with train.py for the same GPU. Also serialize concurrent invokes.
+    if not _GPU_LOCK.acquire(blocking=False):
+        raise GPUBusyError(
+            "Another GPU job is already running (LoRA training or Irodori inference). "
+            "Wait for it to finish."
+        )
+    try:
+        from modules.irodori_bridge import get_bridge
+        try:
+            get_bridge().shutdown()
+        except Exception:
+            logger.exception("Failed to shut down Irodori worker before training")
 
-    # ── Stage 1: convert ──
-    yield _stage("convert", message=f"Converting {source_dir.name} -> lab/{safe_speaker}/{emotion}")
-    n_utts = _convert_clone_to_lab(
-        source=source_dir, lab_root=lab_root, speaker=safe_speaker, emotion=emotion,
-    )
-    yield _stage("convert_done", utterances=n_utts)
+        LORA_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        LORA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        lab_root = LORA_DATA_DIR / "lab"
+        jsonl_dir = LORA_DATA_DIR / "jsonl"
+        latents_root = LORA_DATA_DIR / "latents"
+        jsonl_dir.mkdir(parents=True, exist_ok=True)
+        latents_root.mkdir(parents=True, exist_ok=True)
 
-    # ── Stage 2: create jsonl (pure file processing, runs in vdc venv) ──
-    jsonl_path = jsonl_dir / f"{safe_speaker}.jsonl"
-    yield _stage("create_jsonl", message=f"Writing {jsonl_path.name}")
-    _write_training_jsonl(
-        lab_root=lab_root, speaker=safe_speaker, emotion=emotion, out_jsonl=jsonl_path,
-    )
-    yield _stage("create_jsonl_done", jsonl=str(jsonl_path))
+        # ── Stage 1: convert ──
+        yield _stage("convert", message=f"Converting {source_dir.name} -> lab/{safe_speaker}/{emotion}")
+        n_utts = _convert_clone_to_lab(
+            source=source_dir, lab_root=lab_root, speaker=safe_speaker, emotion=emotion,
+        )
+        yield _stage("convert_done", utterances=n_utts)
 
-    # ── Stage 3: encode latents (runs in Irodori venv via subprocess) ──
-    latent_dir = latents_root / safe_speaker
-    manifest_path = LORA_DATA_DIR / "manifests" / f"{safe_speaker}_manifest.jsonl"
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    encode_script = BASE_DIR / "modules" / "irodori_encode_latents.py"
-    yield _stage("encode_latents", message="Encoding waveforms to latents")
-    list(_stream_subprocess(
-        [
-            str(py), str(encode_script),
-            "--input-jsonl", str(jsonl_path),
-            "--latent-dir", str(latent_dir),
+        # ── Stage 2: create jsonl (pure file processing, runs in vdc venv) ──
+        jsonl_path = jsonl_dir / f"{safe_speaker}.jsonl"
+        yield _stage("create_jsonl", message=f"Writing {jsonl_path.name}")
+        _write_training_jsonl(
+            lab_root=lab_root, speaker=safe_speaker, emotion=emotion, out_jsonl=jsonl_path,
+        )
+        yield _stage("create_jsonl_done", jsonl=str(jsonl_path))
+
+        # ── Stage 3: encode latents (runs in Irodori venv via subprocess) ──
+        latent_dir = latents_root / safe_speaker
+        manifest_path = LORA_DATA_DIR / "manifests" / f"{safe_speaker}_manifest.jsonl"
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        encode_script = BASE_DIR / "modules" / "irodori_encode_latents.py"
+        yield _stage("encode_latents", message="Encoding waveforms to latents")
+        list(_stream_subprocess(
+            [
+                str(py), str(encode_script),
+                "--input-jsonl", str(jsonl_path),
+                "--latent-dir", str(latent_dir),
+                "--manifest", str(manifest_path),
+            ],
+            cwd=irodori_root,
+        ))
+        if not manifest_path.is_file():
+            raise RuntimeError(f"encode_latents did not produce manifest: {manifest_path}")
+        manifest_count = _count_nonempty_lines(manifest_path)
+        if manifest_count == 0:
+            raise RuntimeError(
+                f"encode_latents wrote 0 entries to {manifest_path}. "
+                "All audio files were rejected; check the [subprocess] logs above for skip reasons."
+            )
+        yield _stage(
+            "encode_latents_done", manifest=str(manifest_path), entries=manifest_count,
+        )
+
+        # ── Stage 4: train ──
+        yield _stage("init_checkpoint", message=f"Resolving init checkpoint ({INIT_CHECKPOINT_REPO})")
+        init_ckpt = _ensure_init_checkpoint()
+        yield _stage("init_checkpoint_done", checkpoint=str(init_ckpt))
+
+        train_output_dir = LORA_OUTPUT_DIR / safe_speaker
+        train_output_dir.mkdir(parents=True, exist_ok=True)
+        train_config = irodori_root / TRAIN_CONFIG_RELATIVE
+        if not train_config.is_file():
+            raise RuntimeError(f"train config not found: {train_config}")
+
+        preset_key = steps if isinstance(steps, str) else "quick"
+        preset = PRESET_TRAIN_OVERRIDES.get(preset_key, PRESET_TRAIN_OVERRIDES["quick"])
+        eff_batch = int(batch_size) if batch_size is not None else int(preset["batch_size"])
+        eff_workers = int(num_workers) if num_workers is not None else int(preset["num_workers"])
+        yield _stage(
+            "train",
+            message=f"Training LoRA ({max_steps} steps, batch={eff_batch})",
+            max_steps=max_steps,
+        )
+        cmd = [
+            str(py), str(irodori_root / "train.py"),
+            "--config", str(train_config),
             "--manifest", str(manifest_path),
-        ],
-        cwd=irodori_root,
-    ))
-    if not manifest_path.is_file():
-        raise RuntimeError(f"encode_latents did not produce manifest: {manifest_path}")
-    yield _stage("encode_latents_done", manifest=str(manifest_path))
+            "--init-checkpoint", str(init_ckpt),
+            "--output-dir", str(train_output_dir),
+            "--lora",
+            "--max-steps", str(max_steps),
+            "--batch-size", str(eff_batch),
+            "--num-workers", str(eff_workers),
+        ]
+        if learning_rate is not None:
+            cmd.extend(["--lr", str(float(learning_rate))])
+        for line in _stream_subprocess(cmd, cwd=irodori_root):
+            ev = _parse_train_line(line, max_steps)
+            if ev is not None:
+                yield ev
 
-    # ── Stage 4: train ──
-    yield _stage("init_checkpoint", message=f"Resolving init checkpoint ({INIT_CHECKPOINT_REPO})")
-    init_ckpt = _ensure_init_checkpoint()
-    yield _stage("init_checkpoint_done", checkpoint=str(init_ckpt))
+        adapter_path = _resolve_adapter_path(train_output_dir)
+        yield {
+            "event": "done",
+            "speaker": safe_speaker,
+            "output_dir": str(train_output_dir),
+            "adapter_path": str(adapter_path) if adapter_path else None,
+            "utterances": n_utts,
+            "steps": max_steps,
+        }
+    finally:
+        _GPU_LOCK.release()
 
-    train_output_dir = LORA_OUTPUT_DIR / safe_speaker
-    train_output_dir.mkdir(parents=True, exist_ok=True)
-    train_config = irodori_root / TRAIN_CONFIG_RELATIVE
-    if not train_config.is_file():
-        raise RuntimeError(f"train config not found: {train_config}")
 
-    preset_key = steps if isinstance(steps, str) else "quick"
-    preset = PRESET_TRAIN_OVERRIDES.get(preset_key, PRESET_TRAIN_OVERRIDES["quick"])
-    eff_batch = int(batch_size) if batch_size is not None else int(preset["batch_size"])
-    eff_workers = int(num_workers) if num_workers is not None else int(preset["num_workers"])
-    yield _stage(
-        "train",
-        message=f"Training LoRA ({max_steps} steps, batch={eff_batch})",
-        max_steps=max_steps,
-    )
-    cmd = [
-        str(py), str(irodori_root / "train.py"),
-        "--config", str(train_config),
-        "--manifest", str(manifest_path),
-        "--init-checkpoint", str(init_ckpt),
-        "--output-dir", str(train_output_dir),
-        "--lora",
-        "--max-steps", str(max_steps),
-        "--batch-size", str(eff_batch),
-        "--num-workers", str(eff_workers),
-    ]
-    if learning_rate is not None:
-        cmd.extend(["--lr", str(float(learning_rate))])
-    for line in _stream_subprocess(cmd, cwd=irodori_root):
-        ev = _parse_train_line(line, max_steps)
-        if ev is not None:
-            yield ev
-
-    adapter_path = _resolve_adapter_path(train_output_dir)
-    yield {
-        "event": "done",
-        "speaker": safe_speaker,
-        "output_dir": str(train_output_dir),
-        "adapter_path": str(adapter_path) if adapter_path else None,
-        "utterances": n_utts,
-        "steps": max_steps,
-    }
+def _count_nonempty_lines(path: Path) -> int:
+    with path.open("r", encoding="utf-8") as f:
+        return sum(1 for line in f if line.strip())
 
 
 # train.py prints lines like ``[step 1234/30000] loss=0.5123 ...``. Parse what we

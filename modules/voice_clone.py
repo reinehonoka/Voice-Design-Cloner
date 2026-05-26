@@ -145,8 +145,31 @@ def _batch_clone_irodori(
 ):
     """Irodori variant of batch_clone. Worker writes wavs directly."""
     from modules.irodori_bridge import get_bridge
+    from modules.lora_pipeline import gpu_session
     bridge = get_bridge()
-    bridge.ensure_started()
+
+    # Hold the GPU lock for the whole batch so a stray training start can't
+    # OOM us partway through. fails fast if training is already running.
+    with gpu_session():
+        bridge.ensure_started()
+        yield from _batch_clone_irodori_inner(
+            bridge=bridge, ref_audio=ref_audio, texts=texts,
+            output_folder=output_folder, wavs_folder=wavs_folder,
+            esd_filename=esd_filename, target_sr=target_sr, lora_path=lora_path,
+        )
+
+
+def _batch_clone_irodori_inner(
+    *,
+    bridge,
+    ref_audio: str,
+    texts: list[str],
+    output_folder: str,
+    wavs_folder: str,
+    esd_filename: str,
+    target_sr: int,
+    lora_path: str | None,
+):
 
     safe_output_folder = _sanitize_segment(output_folder, "clone")
     safe_wavs_folder = _sanitize_segment(wavs_folder, "raw")

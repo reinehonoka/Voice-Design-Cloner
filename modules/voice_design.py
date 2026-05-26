@@ -42,11 +42,13 @@ def generate_voice_design(manager, text: str, instruct: str, language: str | Non
 def _generate_voice_design_irodori(text: str, caption: str):
     """Run the Irodori worker once for VoiceDesign and return (sr, audio)."""
     from modules.irodori_bridge import get_bridge
+    from modules.lora_pipeline import gpu_session
     bridge = get_bridge()
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         out_path = tmp.name
     try:
-        bridge.synthesize(mode="design", text=text, caption=caption, out_path=out_path)
+        with gpu_session():
+            bridge.synthesize(mode="design", text=text, caption=caption, out_path=out_path)
         audio, sr = sf.read(out_path, dtype="float32")
         return sr, audio
     finally:
@@ -70,19 +72,21 @@ def generate_clone_oneshot_irodori(
     we then read back as numpy so it plugs into gradio's preview directly.
     """
     from modules.irodori_bridge import get_bridge
+    from modules.lora_pipeline import gpu_session
     bridge = get_bridge()
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         out_path = tmp.name
     try:
-        bridge.synthesize(
-            mode="clone",
-            text=text,
-            caption=caption,
-            ref_wav=ref_wav,
-            out_path=out_path,
-            seed=seed,
-            lora_path=lora_path,
-        )
+        with gpu_session():
+            bridge.synthesize(
+                mode="clone",
+                text=text,
+                caption=caption,
+                ref_wav=ref_wav,
+                out_path=out_path,
+                seed=seed,
+                lora_path=lora_path,
+            )
         audio, sr = sf.read(out_path, dtype="float32")
         return sr, audio
     finally:

@@ -148,6 +148,13 @@ def main() -> int:
                 print_err(f"[encode] {i + 1}/{len(entries)}", flush=True)
 
     print_err(f"[done] written={written} skipped={skipped}", flush=True)
+    if written == 0:
+        print_err(
+            "[error] no entries were encoded. Inspect the [skip] lines above to "
+            "see why each wav was rejected.",
+            flush=True,
+        )
+        return 1
     return 0
 
 
