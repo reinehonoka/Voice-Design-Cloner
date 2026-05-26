@@ -21,7 +21,8 @@ build/
 # qwen3-tts を直下にcloneした場合
 qwen3-tts/
 
-# 外部エンジン（setup.bat / setup.sh が clone する）
+# 外部エンジン（setup.bat / setup.sh が %USERPROFILE%\.vdc-engines\ にclone）
+# プロジェクトディレクトリには展開しないが、誤って配置された場合の保険として残す
 engines/
 
 # VSCode

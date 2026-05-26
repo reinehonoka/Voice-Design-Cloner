@@ -144,16 +144,20 @@ if errorlevel 1 (
     goto :done
 )
 
-if not exist "engines" mkdir engines
-if not exist "engines\Irodori-TTS" (
-    echo [INFO] Cloning Irodori-TTS...
-    git clone https://github.com/Aratako/Irodori-TTS.git engines\Irodori-TTS
+REM Irodori is installed under %USERPROFILE%\.vdc-engines\ on Windows so it always
+REM lands on the system drive (NTFS). Project dirs are sometimes on exFAT
+REM external SSDs, which breaks uv's hardlinking and makes installs absurdly slow.
+set "IRODORI_ROOT=%USERPROFILE%\.vdc-engines\Irodori-TTS"
+if not exist "%USERPROFILE%\.vdc-engines" mkdir "%USERPROFILE%\.vdc-engines"
+if not exist "%IRODORI_ROOT%" (
+    echo [INFO] Cloning Irodori-TTS to %IRODORI_ROOT% ...
+    git clone https://github.com/Aratako/Irodori-TTS.git "%IRODORI_ROOT%"
     if errorlevel 1 (
         echo [WARN] git clone failed. Skipping Irodori-TTS.
         goto :done
     )
 ) else (
-    echo [INFO] engines\Irodori-TTS already exists. Skipping clone.
+    echo [INFO] %IRODORI_ROOT% already exists. Skipping clone.
 )
 
 echo [INFO] Installing uv into main venv...
@@ -163,8 +167,11 @@ if errorlevel 1 (
     goto :done
 )
 
-echo [INFO] Running uv sync --extra cu128 in engines\Irodori-TTS...
-pushd engines\Irodori-TTS
+REM Suppress git dubious-ownership errors on external/exFAT mounts.
+git config --global --add safe.directory * >nul 2>&1
+
+echo [INFO] Running uv sync --extra cu128 in %IRODORI_ROOT% ...
+pushd "%IRODORI_ROOT%"
 uv sync --extra cu128
 set IRODORI_RC=%ERRORLEVEL%
 popd

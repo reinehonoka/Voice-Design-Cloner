@@ -99,21 +99,25 @@ elif ! command -v git > /dev/null 2>&1; then
     echo "[WARN] git not found. Skipping Irodori-TTS."
     echo "[WARN] Install git and re-run setup to enable Irodori."
 else
-    mkdir -p engines
-    if [ ! -d "engines/Irodori-TTS" ]; then
-        echo "[INFO] Cloning Irodori-TTS..."
-        if ! git clone https://github.com/Aratako/Irodori-TTS.git engines/Irodori-TTS; then
+    # Install Irodori under ~/.vdc-engines/ so it always lives on the home
+    # filesystem and avoids issues with project dirs on exFAT/external drives.
+    IRODORI_ROOT="$HOME/.vdc-engines/Irodori-TTS"
+    mkdir -p "$HOME/.vdc-engines"
+    if [ ! -d "$IRODORI_ROOT" ]; then
+        echo "[INFO] Cloning Irodori-TTS to $IRODORI_ROOT ..."
+        if ! git clone https://github.com/Aratako/Irodori-TTS.git "$IRODORI_ROOT"; then
             echo "[WARN] git clone failed. Skipping Irodori-TTS."
         fi
     else
-        echo "[INFO] engines/Irodori-TTS already exists. Skipping clone."
+        echo "[INFO] $IRODORI_ROOT already exists. Skipping clone."
     fi
 
-    if [ -d "engines/Irodori-TTS" ]; then
+    if [ -d "$IRODORI_ROOT" ]; then
         echo "[INFO] Installing uv into main venv..."
         if pip install -U uv; then
-            echo "[INFO] Running uv sync --extra cu128 in engines/Irodori-TTS..."
-            (cd engines/Irodori-TTS && uv sync --extra cu128)
+            git config --global --add safe.directory '*' >/dev/null 2>&1 || true
+            echo "[INFO] Running uv sync --extra cu128 in $IRODORI_ROOT ..."
+            (cd "$IRODORI_ROOT" && uv sync --extra cu128)
             if [ $? -eq 0 ]; then
                 echo "[INFO] Irodori-TTS setup complete."
             else
