@@ -6,7 +6,13 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-BACKENDS = ["standard", "faster"]
+BACKENDS = ["standard", "faster", "irodori"]
+
+BACKEND_LABELS = {
+    "standard": "Qwen3-TTS",
+    "faster": "faster",
+    "irodori": "Irodori-TTS",
+}
 
 
 def _faster_available() -> bool:
@@ -16,6 +22,12 @@ def _faster_available() -> bool:
         return True
     except ImportError:
         return False
+
+
+def _irodori_available() -> bool:
+    """Check if Irodori-TTS has been installed by setup."""
+    from modules.irodori_bridge import get_bridge
+    return get_bridge().is_available()
 
 
 class ModelManager:
@@ -34,7 +46,19 @@ class ModelManager:
         self.device = self._detect_device()
         self.dtype = torch.bfloat16 if self.device == "cuda" else torch.float32
         self.attn_impl = "sdpa" if self.device == "cuda" else None
-        self.backend = "faster" if _faster_available() else "standard"
+        self.backend = self._initial_backend()
+
+    @staticmethod
+    def _initial_backend() -> str:
+        from config import load_backend
+        persisted = load_backend()
+        if persisted == "irodori" and _irodori_available():
+            return "irodori"
+        if persisted == "faster" and _faster_available():
+            return "faster"
+        if persisted == "standard":
+            return "standard"
+        return "faster" if _faster_available() else "standard"
 
     def _detect_device(self):
         return "cuda" if torch.cuda.is_available() else "cpu"
@@ -48,12 +72,32 @@ class ModelManager:
                 "faster-qwen3-tts is not installed. "
                 "Run: pip install faster-qwen3-tts"
             )
+        if backend == "irodori" and not _irodori_available():
+            raise RuntimeError(
+                "Irodori-TTS is not installed. Run setup.bat / setup.sh."
+            )
         if backend != self.backend:
             logger.info("Backend changed: %s -> %s", self.backend, backend)
-            self.backend = backend
+            # Leaving the old qwen model loaded would just waste VRAM while
+            # the user is on the Irodori backend, and vice versa.
             self.unload_model()
+            self._shutdown_irodori_if_switching_away(backend)
+            self.backend = backend
+
+    def _shutdown_irodori_if_switching_away(self, new_backend: str) -> None:
+        if self.backend == "irodori" and new_backend != "irodori":
+            try:
+                from modules.irodori_bridge import get_bridge
+                get_bridge().shutdown()
+            except Exception:
+                logger.exception("Failed to shut down Irodori worker cleanly")
 
     def load_model(self, model_key: str):
+        if self.backend == "irodori":
+            # Irodori has no per-tab Qwen-style model swap; the worker chooses
+            # the right checkpoint (v3 for clone, v2-VoiceDesign for design)
+            # on demand.
+            return
         if self.current_model_name == model_key and self.current_backend == self.backend:
             logger.debug("Model already loaded: %s (%s)", model_key, self.backend)
             return

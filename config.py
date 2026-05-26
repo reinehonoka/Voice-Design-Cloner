@@ -14,17 +14,38 @@ CORPUS_DIR = BASE_DIR / "corpus"
 _CONFIG_JSON = BASE_DIR / "config.json"
 _SUPPORTED_LANGS = {"ja", "en", "zh", "ko"}
 
-def _load_lang() -> str:
+def _load_config() -> dict:
     try:
-        data = json.loads(_CONFIG_JSON.read_text(encoding="utf-8"))
-        lang = data.get("language", "ja")
-        return lang if lang in _SUPPORTED_LANGS else "ja"
+        return json.loads(_CONFIG_JSON.read_text(encoding="utf-8"))
     except Exception:
-        return "ja"
+        return {}
+
+
+def _save_config(data: dict) -> None:
+    _CONFIG_JSON.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def _load_lang() -> str:
+    data = _load_config()
+    lang = data.get("language", "ja")
+    return lang if lang in _SUPPORTED_LANGS else "ja"
+
 
 def save_lang(lang: str) -> None:
-    data = {"language": lang}
-    _CONFIG_JSON.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    data = _load_config()
+    data["language"] = lang
+    _save_config(data)
+
+
+def load_backend() -> str | None:
+    """Return the persisted backend key, or None if not set."""
+    return _load_config().get("backend")
+
+
+def save_backend(backend: str) -> None:
+    data = _load_config()
+    data["backend"] = backend
+    _save_config(data)
 
 LANG: str = _load_lang()
 

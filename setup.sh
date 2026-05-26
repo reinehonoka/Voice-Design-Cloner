@@ -115,7 +115,6 @@ else
     if [ -d "$IRODORI_ROOT" ]; then
         echo "[INFO] Installing uv into main venv..."
         if pip install -U uv; then
-            git config --global --add safe.directory '*' >/dev/null 2>&1 || true
             echo "[INFO] Running uv sync --extra cu128 in $IRODORI_ROOT ..."
             (cd "$IRODORI_ROOT" && uv sync --extra cu128)
             if [ $? -eq 0 ]; then

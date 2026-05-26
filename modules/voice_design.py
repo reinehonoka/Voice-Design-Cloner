@@ -2,6 +2,7 @@
 
 import os
 import re
+import tempfile
 from pathlib import Path
 import soundfile as sf
 from config import VOICE_DESIGN_DIR, TTS_LANG
@@ -26,6 +27,8 @@ def _sanitize_filename(name: str, default: str = "voice_design") -> str:
 
 def generate_voice_design(manager, text: str, instruct: str, language: str | None = None, **kwargs):
     """Generate a voice with VoiceDesign model. Returns (sample_rate, audio_array)."""
+    if manager.backend == "irodori":
+        return _generate_voice_design_irodori(text, instruct)
     manager.load_model("1.7B-VoiceDesign")
     wavs, sr = manager.current_model.generate_voice_design(
         text=text,
@@ -34,6 +37,23 @@ def generate_voice_design(manager, text: str, instruct: str, language: str | Non
         **kwargs,
     )
     return sr, wavs[0]
+
+
+def _generate_voice_design_irodori(text: str, caption: str):
+    """Run the Irodori worker once for VoiceDesign and return (sr, audio)."""
+    from modules.irodori_bridge import get_bridge
+    bridge = get_bridge()
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        out_path = tmp.name
+    try:
+        bridge.synthesize(mode="design", text=text, caption=caption, out_path=out_path)
+        audio, sr = sf.read(out_path, dtype="float32")
+        return sr, audio
+    finally:
+        try:
+            os.remove(out_path)
+        except OSError:
+            pass
 
 
 def save_voice(audio_tuple, name: str, sample_text: str = "") -> str:

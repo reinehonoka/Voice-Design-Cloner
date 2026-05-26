@@ -6,9 +6,21 @@ import time
 import threading
 import subprocess
 import gradio as gr
-from modules.model_manager import ModelManager, BACKENDS, _faster_available
-from config import LANG, save_lang
+from modules.model_manager import ModelManager, BACKENDS, BACKEND_LABELS, _faster_available, _irodori_available
+from config import LANG, save_lang, save_backend
 from lang import t
+
+
+def _backend_choices() -> list[tuple[str, str]]:
+    """Return (label, internal_key) pairs filtered by what's actually installed."""
+    pairs = []
+    for key in BACKENDS:
+        if key == "faster" and not _faster_available():
+            continue
+        if key == "irodori" and not _irodori_available():
+            continue
+        pairs.append((BACKEND_LABELS[key], key))
+    return pairs
 
 _LANG_CHOICES = [
     ("日本語", "ja"),
@@ -25,10 +37,10 @@ def build_settings_tab(manager: ModelManager):
             with gr.Group():
                 gr.Markdown(t("settings_backend_desc"))
                 backend_dropdown = gr.Dropdown(
-                    choices=BACKENDS,
+                    choices=_backend_choices(),
                     value=manager.backend,
                     label=t("settings_backend_label"),
-                    interactive=_faster_available(),
+                    interactive=True,
                 )
                 backend_status = gr.Textbox(
                     value=_backend_status_text(manager),
@@ -51,6 +63,10 @@ def build_settings_tab(manager: ModelManager):
                     value=t("settings_faster_installed") if _faster_available() else t("settings_faster_not_installed"),
                     label="faster-qwen3-tts", interactive=False,
                 )
+                gr.Textbox(
+                    value=t("settings_faster_installed") if _irodori_available() else t("settings_faster_not_installed"),
+                    label="Irodori-TTS", interactive=False,
+                )
                 refresh_btn = gr.Button(t("settings_btn_refresh"), variant="secondary")
 
     gr.HTML("<div style='height: 12px'></div>")
@@ -72,14 +88,27 @@ def build_settings_tab(manager: ModelManager):
     def on_backend_change(backend):
         try:
             manager.set_backend(backend)
-            return _backend_status_text(manager)
+            save_backend(backend)
         except Exception as e:
             return t("settings_backend_err").format(e)
+
+        # Backend switching changes which controls are locked in the Design /
+        # Clone tabs. Auto-restart so those tabs render with the correct state.
+        def _restart():
+            time.sleep(1.5)
+            env = os.environ.copy()
+            env["VDC_RESTART"] = "1"
+            subprocess.Popen([sys.executable] + sys.argv, env=env)
+            os._exit(0)
+
+        threading.Thread(target=_restart, daemon=True).start()
+        return t("settings_backend_restart")
 
     backend_dropdown.change(
         fn=on_backend_change,
         inputs=[backend_dropdown],
         outputs=[backend_status],
+        js="(b) => { setTimeout(() => { function poll(){ fetch('/').then(() => location.reload()).catch(() => setTimeout(poll, 500)); } poll(); }, 2000); return [b]; }",
     )
 
     def on_refresh():

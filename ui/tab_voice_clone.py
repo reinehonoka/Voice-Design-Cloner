@@ -28,6 +28,11 @@ def _resolve_uploaded_path(uploaded_file) -> str | None:
 
 
 def build_voice_clone_tab(manager: ModelManager):
+    # When Irodori is the active backend, the Qwen model dropdown / non-JA
+    # languages / corpus transcript field don't apply, so lock them.
+    is_irodori = manager.backend == "irodori"
+    qwen_interactive = not is_irodori
+
     resolved_ref_path = gr.State(None)
     ref_mode = gr.State(t("vc_ref_tab_shortcut"))
     corpus_mode = gr.State(t("vc_corpus_tab_file"))
@@ -57,6 +62,7 @@ def build_voice_clone_tab(manager: ModelManager):
                     placeholder=t("vc_ref_text_placeholder"),
                     value=_init_ref_text,
                     lines=1,
+                    interactive=qwen_interactive,
                 )
 
             refresh_btn = gr.Button(t("vc_btn_refresh_ref"), variant="secondary")
@@ -86,9 +92,10 @@ def build_voice_clone_tab(manager: ModelManager):
                         )
 
                 corpus_lang_radio = gr.Radio(
-                    choices=["JA", "EN", "ZH"],
+                    choices=(["JA"] if is_irodori else ["JA", "EN", "ZH"]),
                     value="JA",
                     label=t("vc_corpus_lang_label"),
+                    interactive=qwen_interactive,
                 )
 
                 with gr.Row():
@@ -114,12 +121,16 @@ def build_voice_clone_tab(manager: ModelManager):
             gr.Markdown(t("vc_settings_section"))
             with gr.Group():
                 model_choice = gr.Dropdown(
-                    choices=ModelManager.CLONE_MODELS, value="1.7B-Base", label=t("vc_model_label"),
+                    choices=(["Irodori-TTS-500M-v3"] if is_irodori else ModelManager.CLONE_MODELS),
+                    value=("Irodori-TTS-500M-v3" if is_irodori else "1.7B-Base"),
+                    label=t("vc_model_label"),
+                    interactive=qwen_interactive,
                 )
                 tts_lang_dropdown = gr.Dropdown(
-                    choices=TTS_LANGUAGES,
-                    value=TTS_LANG,
+                    choices=(["japanese"] if is_irodori else TTS_LANGUAGES),
+                    value=("japanese" if is_irodori else TTS_LANG),
                     label=t("vd_tts_lang_label"),
+                    interactive=qwen_interactive,
                 )
                 target_sr = gr.Dropdown(
                     choices=[44100, 48000, 24000, 22050], value=DEFAULT_TARGET_SR, label=t("vc_sr_label"),
@@ -292,7 +303,7 @@ def build_voice_clone_tab(manager: ModelManager):
         if not ref:
             yield t("vc_err_ref_not_found"), ""
             return
-        if not ref_t.strip():
+        if manager.backend != "irodori" and not ref_t.strip():
             yield t("vc_err_empty_ref_text"), ""
             return
 

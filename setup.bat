@@ -167,9 +167,6 @@ if errorlevel 1 (
     goto :done
 )
 
-REM Suppress git dubious-ownership errors on external/exFAT mounts.
-git config --global --add safe.directory * >nul 2>&1
-
 echo [INFO] Running uv sync --extra cu128 in %IRODORI_ROOT% ...
 pushd "%IRODORI_ROOT%"
 uv sync --extra cu128
