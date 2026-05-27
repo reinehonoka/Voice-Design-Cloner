@@ -52,21 +52,35 @@ fi
 
 source venv/bin/activate
 
+# Upgrade packaging tools first. Some deps still use legacy setup.py flows.
+echo ""
+echo "[INFO] Upgrading pip/setuptools/wheel..."
+pip install -U pip wheel "setuptools<82"
+
 # Detect GPU and install PyTorch
 echo ""
 echo "[INFO] Checking GPU..."
 if nvidia-smi > /dev/null 2>&1; then
-    echo "[INFO] NVIDIA GPU detected. Installing CUDA version of PyTorch."
-    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+    GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -n 1)
+    TORCH_CUDA="${VDC_TORCH_CUDA:-}"
+    if [ -z "$TORCH_CUDA" ]; then
+        case "$GPU_NAME" in
+            *"RTX 50"*|*"RTX PRO 50"*|*"RTX 5070"*|*"RTX 5080"*|*"RTX 5090"*)
+                TORCH_CUDA="cu128"
+                ;;
+            *)
+                TORCH_CUDA="cu118"
+                ;;
+        esac
+    fi
+    echo "[INFO] NVIDIA GPU detected: ${GPU_NAME:-unknown}"
+    echo "[INFO] Installing PyTorch build: $TORCH_CUDA"
+    echo "[INFO] Override with: VDC_TORCH_CUDA=cu128 ./setup.sh"
+    pip install torch torchaudio --index-url "https://download.pytorch.org/whl/$TORCH_CUDA"
 else
     echo "[INFO] No NVIDIA GPU detected. Installing CPU version of PyTorch."
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 fi
-
-# Upgrade packaging tools first. Some deps still use legacy setup.py flows.
-echo ""
-echo "[INFO] Upgrading pip/setuptools/wheel..."
-pip install -U pip setuptools wheel
 
 # sox may import numpy during metadata generation, so install it before requirements.
 echo ""

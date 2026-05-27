@@ -88,6 +88,11 @@ if not exist "venv" (
 
 call venv\Scripts\activate
 
+REM Upgrade packaging tools first. Some deps still use legacy setup.py flows.
+echo.
+echo [INFO] Upgrading pip/setuptools/wheel...
+pip install -U pip wheel "setuptools<82"
+
 REM Detect GPU and install PyTorch
 echo.
 echo [INFO] Checking GPU...
@@ -96,14 +101,23 @@ if errorlevel 1 (
     echo [INFO] No NVIDIA GPU detected. Installing CPU version of PyTorch.
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 ) else (
-    echo [INFO] NVIDIA GPU detected. Installing CUDA version of PyTorch.
-    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+    for /f "usebackq delims=" %%G in (`nvidia-smi --query-gpu^=name --format^=csv^,noheader 2^>nul`) do (
+        set "GPU_NAME=%%G"
+    )
+    set "TORCH_CUDA=%VDC_TORCH_CUDA%"
+    if "!TORCH_CUDA!"=="" (
+        echo !GPU_NAME! | findstr /i /c:"RTX 50" /c:"RTX PRO 50" /c:"RTX 5070" /c:"RTX 5080" /c:"RTX 5090" >nul
+        if errorlevel 1 (
+            set "TORCH_CUDA=cu118"
+        ) else (
+            set "TORCH_CUDA=cu128"
+        )
+    )
+    echo [INFO] NVIDIA GPU detected: !GPU_NAME!
+    echo [INFO] Installing PyTorch build: !TORCH_CUDA!
+    echo [INFO] Override with: set VDC_TORCH_CUDA=cu128
+    pip install torch torchaudio --index-url https://download.pytorch.org/whl/!TORCH_CUDA!
 )
-
-REM Upgrade packaging tools first. Some deps still use legacy setup.py flows.
-echo.
-echo [INFO] Upgrading pip/setuptools/wheel...
-pip install -U pip setuptools wheel
 
 REM sox may import numpy during metadata generation, so install it before requirements.
 echo.

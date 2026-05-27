@@ -69,6 +69,10 @@ CHECKPOINTS = {
 CODEC_REPO = "Aratako/Semantic-DACVAE-Japanese-32dim"
 
 
+def _log(message: str) -> None:
+    print(f"[Irodori] {message}", file=sys.stderr, flush=True)
+
+
 class WorkerState:
     def __init__(self) -> None:
         self.runtime: InferenceRuntime | None = None
@@ -76,8 +80,10 @@ class WorkerState:
 
     def ensure_runtime(self, mode: str) -> InferenceRuntime:
         if self.runtime is not None and self.mode == mode:
+            _log(f"Runtime already loaded for mode={mode}.")
             return self.runtime
         if self.runtime is not None:
+            _log(f"Unloading runtime for mode={self.mode}.")
             del self.runtime
             self.runtime = None
             import gc
@@ -85,8 +91,11 @@ class WorkerState:
             torch.cuda.empty_cache()
             gc.collect()
         repo = CHECKPOINTS[mode]
+        _log(f"Preparing runtime for mode={mode}.")
+        _log(f"Checking/downloading checkpoint: {repo}/model.safetensors")
         ckpt = hf_hub_download(repo_id=repo, filename="model.safetensors")
         device = default_runtime_device()
+        _log(f"Loading Irodori runtime on device={device}.")
         self.runtime = InferenceRuntime.from_key(
             RuntimeKey(
                 checkpoint=ckpt,
@@ -102,6 +111,7 @@ class WorkerState:
             )
         )
         self.mode = mode
+        _log(f"Runtime ready for mode={mode}.")
         return self.runtime
 
 
@@ -129,6 +139,7 @@ def handle_synthesize(state: WorkerState, req: dict[str, Any]) -> dict[str, Any]
     if mode not in CHECKPOINTS:
         return {"ok": False, "error": f"unknown mode: {mode}"}
 
+    _log(f"Synthesis requested: mode={mode}.")
     runtime = state.ensure_runtime(mode)
 
     text = req["text"]
@@ -176,8 +187,11 @@ def handle_synthesize(state: WorkerState, req: dict[str, Any]) -> dict[str, Any]
         tail_mean_threshold=0.1,
     )
 
-    result = runtime.synthesize(sampling, log_fn=None)
+    _log("Generating audio...")
+    result = runtime.synthesize(sampling, log_fn=lambda msg: _log(str(msg)))
+    _log(f"Saving wav: {out_path}")
     _save_wav_resampled(out_path, result.audio, result.sample_rate, target_sr)
+    _log("Synthesis complete.")
     return {
         "ok": True,
         "out_path": str(out_path),

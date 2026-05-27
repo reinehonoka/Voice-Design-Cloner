@@ -79,6 +79,20 @@ Because Irodori-TTS requires a different torch build (2.10/cu128) that's incompa
 - Install location: `%USERPROFILE%\.vdc-engines\Irodori-TTS\` (Linux: `~/.vdc-engines/`)
 - vdc launches it as a subprocess worker
 
+PyTorch is selected automatically based on your GPU. RTX 50-series GPUs use `cu128`; other NVIDIA GPUs use `cu118`.
+To override the automatic selection, set the `VDC_TORCH_CUDA` environment variable.
+
+Windows:
+```
+set VDC_TORCH_CUDA=cu128
+setup.bat
+```
+
+Linux / WSL2:
+```
+VDC_TORCH_CUDA=cu128 ./setup.sh
+```
+
 To add faster-qwen3-tts manually later:
 
 ```
@@ -184,6 +198,8 @@ The faster backend uses CUDA Graph optimization via [faster-qwen3-tts](https://g
 
 Selecting the Irodori-TTS backend switches Voice Design / Voice Clone tabs to Japanese-only mode and enables the LoRA and Irodori Inference tabs.
 Switching backends auto-restarts the app so every tab renders with the appropriate lock state.
+
+On the first Irodori-TTS generation, the app checks/downloads models from Hugging Face. Progress is printed to the console with `[Irodori] Checking/downloading checkpoint...` and related messages.
 
 ---
 
