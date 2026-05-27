@@ -183,8 +183,11 @@ if errorlevel 1 (
 
 echo [INFO] Running uv sync --extra cu128 in %IRODORI_ROOT% ...
 pushd "%IRODORI_ROOT%"
+set "OLD_VIRTUAL_ENV=%VIRTUAL_ENV%"
+set "VIRTUAL_ENV="
 uv sync --extra cu128
 set IRODORI_RC=%ERRORLEVEL%
+set "VIRTUAL_ENV=%OLD_VIRTUAL_ENV%"
 popd
 if not "%IRODORI_RC%"=="0" (
     echo [WARN] uv sync failed (exit %IRODORI_RC%^). Irodori-TTS may not be usable.

@@ -130,7 +130,17 @@ else
         echo "[INFO] Installing uv into main venv..."
         if pip install -U uv; then
             echo "[INFO] Running uv sync --extra cu128 in $IRODORI_ROOT ..."
-            (cd "$IRODORI_ROOT" && uv sync --extra cu128)
+            (
+                cd "$IRODORI_ROOT" || exit 1
+                OLD_VIRTUAL_ENV="${VIRTUAL_ENV:-}"
+                unset VIRTUAL_ENV
+                uv sync --extra cu128
+                UV_RC=$?
+                if [ -n "$OLD_VIRTUAL_ENV" ]; then
+                    export VIRTUAL_ENV="$OLD_VIRTUAL_ENV"
+                fi
+                exit "$UV_RC"
+            )
             if [ $? -eq 0 ]; then
                 echo "[INFO] Irodori-TTS setup complete."
             else
