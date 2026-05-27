@@ -187,6 +187,15 @@ set "OLD_VIRTUAL_ENV=%VIRTUAL_ENV%"
 set "VIRTUAL_ENV="
 uv sync --extra cu128
 set IRODORI_RC=%ERRORLEVEL%
+if "%IRODORI_RC%"=="0" (
+    uv pip install --python .venv\Scripts\python.exe hf_xet
+    set IRODORI_RC=%ERRORLEVEL%
+)
+if "%IRODORI_RC%"=="0" (
+    echo [INFO] Pre-downloading Irodori-TTS model assets...
+    .venv\Scripts\python.exe "%~dp0modules\irodori_predownload.py"
+    set IRODORI_RC=%ERRORLEVEL%
+)
 set "VIRTUAL_ENV=%OLD_VIRTUAL_ENV%"
 popd
 if not "%IRODORI_RC%"=="0" (

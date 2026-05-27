@@ -80,6 +80,7 @@ Irodori-TTS は torch のバージョンが Qwen3 と非互換（2.10/cu128）�
 
 - インストール先: `%USERPROFILE%\.vdc-engines\Irodori-TTS\`（Linux: `~/.vdc-engines/`）
 - vdc 本体からはサブプロセスのワーカーとして呼び出されます
+- Irodori-TTS の checkpoint / codec は setup 中に Hugging Face から事前ダウンロードされます
 
 PyTorch は GPU に合わせて自動選択されます。RTX 50系では `cu128`、それ以外の NVIDIA GPU では `cu118` を使用します。
 自動判定を上書きしたい場合は、環境変数 `VDC_TORCH_CUDA` を指定してください。
@@ -207,7 +208,7 @@ faster バックエンドは [faster-qwen3-tts](https://github.com/andimarafioti
 Irodori-TTS バックエンドを選択すると、ボイスデザイン/ボイスクローン両タブのUIが日本語固定モードに切り替わり、LoRA学習タブとIrodori推論タブが利用可能になります。
 バックエンドを切り替えるとアプリが自動再起動し、各タブが対応するUI状態でレンダリングされます。
 
-Irodori-TTS の初回生成時は Hugging Face からモデルを確認・ダウンロードします。コンソールに `[Irodori] Checking/downloading checkpoint...` などの進捗ログが表示されます。
+Irodori-TTS のモデル本体は setup 中に事前ダウンロードされます。生成時はコンソールに `[Irodori] Loading Irodori runtime...` などの進捗ログが表示されます。
 
 ---
 

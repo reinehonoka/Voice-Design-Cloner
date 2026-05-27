@@ -11,6 +11,8 @@ if not exist "venv" (
 
 call venv\Scripts\activate
 echo [INFO] Starting VoiceDesignCloner...
-echo [INFO] Browser will open automatically. If not, go to http://127.0.0.1:7860
+echo [INFO] Browser will open automatically.
+echo [INFO] Default URL: http://127.0.0.1:7860
+echo [INFO] If 7860 is busy, the app will use the next free port.
 python app.py
 pause

@@ -5,6 +5,7 @@ import sys
 import io
 import warnings
 import logging
+import socket
 
 import asyncio
 import gradio as gr
@@ -24,6 +25,18 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _pick_server_port() -> int:
+    raw = os.environ.get("GRADIO_SERVER_PORT")
+    if raw:
+        return int(raw)
+    for port in range(7860, 7871):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.2)
+            if sock.connect_ex(("127.0.0.1", port)) != 0:
+                return port
+    raise OSError("No empty port found in range 7860-7870.")
 
 # Windows CJK encoding fix + suppress harmless ConnectionResetError tracebacks
 _SUPPRESS_PATTERNS = (
@@ -64,17 +77,15 @@ def _asyncio_exception_handler(loop, context):
     loop.default_exception_handler(context)
 
 
-try:
-    loop = asyncio.get_event_loop()
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 loop.set_exception_handler(_asyncio_exception_handler)
 
 manager = ModelManager()
-logger.info("VoiceDesignCloner starting (backend=%s)", manager.backend)
+server_port = _pick_server_port()
+logger.info("VoiceDesignCloner starting (backend=%s, port=%s)", manager.backend, server_port)
 
-with gr.Blocks(title="VoiceDesignCloner", theme="NoCrypt/miku") as demo:
+with gr.Blocks(title="VoiceDesignCloner") as demo:
     gr.Markdown("# VoiceDesignCloner")
 
     with gr.Tabs():
@@ -96,7 +107,8 @@ with gr.Blocks(title="VoiceDesignCloner", theme="NoCrypt/miku") as demo:
 demo.queue(default_concurrency_limit=1)
 demo.launch(
     server_name="127.0.0.1",
-    server_port=7860,
+    server_port=server_port,
     inbrowser=os.environ.get("VDC_RESTART") != "1",
     share=False,
+    theme="NoCrypt/miku",
 )
