@@ -138,11 +138,6 @@ else
                 uv sync --extra cu128
                 UV_RC=$?
                 if [ "$UV_RC" -eq 0 ]; then
-                    uv pip install --python .venv/bin/python hf_xet
-                    UV_RC=$?
-                fi
-                if [ "$UV_RC" -eq 0 ]; then
-                    echo "[INFO] Pre-downloading Irodori-TTS model assets..."
                     .venv/bin/python "$VDC_ROOT/modules/irodori_predownload.py"
                     UV_RC=$?
                 fi

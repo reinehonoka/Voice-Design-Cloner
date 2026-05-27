@@ -34,6 +34,7 @@ from typing import Any
 # bundled ``irodori_tts`` package is importable. Python doesn't add CWD to
 # sys.path automatically when running a script outside of it, so do it here.
 sys.path.insert(0, os.getcwd())
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
 # Force stdin/stdout/stderr to UTF-8. The bridge writes UTF-8 JSON on stdin,
 # but on Japanese Windows the default Python text-mode encoding is cp932,
